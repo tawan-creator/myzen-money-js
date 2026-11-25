@@ -2,9 +2,9 @@
 "use strict";
 
 // ==========================================
-// MYZEN MONEY BACKEND SERVER
+// MYZEN MONEY - PRODUCTION WALLET BACKEND
+// Wallet-to-Wallet Internal Transfers
 // Firebase Admin SDK v14
-// DEMO WALLET TRANSFER API
 // ==========================================
 
 require("dotenv").config();
@@ -12,10 +12,6 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-
-// ==========================================
-// FIREBASE ADMIN SDK v14 IMPORTS
-// ==========================================
 
 const {
   initializeApp,
@@ -38,11 +34,7 @@ const {
 // ==========================================
 
 const app = express();
-
 const PORT = Number(process.env.PORT) || 3000;
-
-const DEMO_MODE =
-  String(process.env.DEMO_MODE).toLowerCase() === "true";
 
 app.disable("x-powered-by");
 
@@ -51,7 +43,7 @@ app.use(express.json({
 }));
 
 // ==========================================
-// CORS CONFIGURATION
+// CORS
 // ==========================================
 
 const allowedOrigins = (
@@ -63,15 +55,8 @@ const allowedOrigins = (
   .filter(Boolean);
 
 app.use(cors({
-
-  origin: function (origin, callback) {
-
-    // Allow requests without Origin, such as local health checks.
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.includes(origin)) {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
@@ -82,11 +67,7 @@ app.use(cors({
     );
   },
 
-  methods: [
-    "GET",
-    "POST",
-    "OPTIONS"
-  ],
+  methods: ["GET", "POST", "OPTIONS"],
 
   allowedHeaders: [
     "Content-Type",
@@ -94,7 +75,6 @@ app.use(cors({
   ],
 
   credentials: true
-
 }));
 
 // ==========================================
@@ -104,60 +84,47 @@ app.use(cors({
 let firebaseCredential;
 
 try {
-
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-
     const serviceAccount = JSON.parse(
       process.env.FIREBASE_SERVICE_ACCOUNT
     );
 
     if (serviceAccount.private_key) {
-
       serviceAccount.private_key =
         serviceAccount.private_key.replace(/\\n/g, "\n");
-
     }
 
     firebaseCredential = cert(serviceAccount);
 
   } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-
     firebaseCredential = applicationDefault();
 
   } else {
-
     const serviceAccountPath = path.join(
       __dirname,
       "serviceAccountKey.json"
     );
 
-    const serviceAccount = require(
-      serviceAccountPath
-    );
+    const serviceAccount = require(serviceAccountPath);
 
     firebaseCredential = cert(serviceAccount);
-
   }
 
   if (getApps().length === 0) {
-
     initializeApp({
       credential: firebaseCredential
     });
-
   }
 
   console.log("MYZEN FIREBASE ADMIN CONNECTED");
 
 } catch (error) {
-
   console.error(
     "FIREBASE ADMIN INITIALIZATION ERROR:",
-    error
+    error.message
   );
 
   process.exit(1);
-
 }
 
 // ==========================================
@@ -165,23 +132,18 @@ try {
 // ==========================================
 
 const db = getFirestore();
-
 const firebaseAuth = getAuth();
 
 // ==========================================
 // RESPONSE HELPERS
 // ==========================================
 
-function sendError(res, status, message) {
-
+function sendError(res, status, message, code) {
   return res.status(status).json({
-
     success: false,
-
-    message
-
+    message,
+    ...(code ? { code } : {})
   });
-
 }
 
 // ==========================================
@@ -189,7 +151,6 @@ function sendError(res, status, message) {
 // ==========================================
 
 function normalizeCountry(value) {
-
   const country = String(value || "")
     .trim()
     .toLowerCase();
@@ -205,15 +166,12 @@ function normalizeCountry(value) {
   if (
     country === "myanmar" ||
     country === "mm" ||
-    country === "burma" ||
-    country === "မြန်မာ" ||
-    country === "မြန်မာနိုင်ငံ"
+    country === "burma"
   ) {
     return "Myanmar";
   }
 
   return "";
-
 }
 
 // ==========================================
@@ -221,57 +179,103 @@ function normalizeCountry(value) {
 // ==========================================
 
 function getCurrency(country) {
-
-  if (country === "Thailand") {
-    return "THB";
-  }
-
-  if (country === "Myanmar") {
-    return "MMK";
-  }
+  if (country === "Thailand") return "THB";
+  if (country === "Myanmar") return "MMK";
 
   return "";
-
 }
 
 // ==========================================
-// AMOUNT VALIDATION
+// MONEY HELPERS
 // ==========================================
 
-function validAmount(amount, currency) {
-
+function moneyToMinorUnits(amount, currency) {
   if (
     typeof amount !== "number" ||
     !Number.isFinite(amount) ||
     amount <= 0
   ) {
-    return false;
+    return null;
   }
 
-  if (currency === "MMK") {
+  let minorUnits;
 
-    return Number.isInteger(amount);
+  if (currency === "THB") {
+    minorUnits = Math.round(amount * 100);
 
+    if (Math.abs(amount * 100 - minorUnits) > 0.000001) {
+      return null;
+    }
+
+  } else if (currency === "MMK") {
+    if (!Number.isInteger(amount)) {
+      return null;
+    }
+
+    minorUnits = amount;
+
+  } else {
+    return null;
+  }
+
+  if (
+    !Number.isSafeInteger(minorUnits) ||
+    minorUnits <= 0
+  ) {
+    return null;
+  }
+
+  return minorUnits;
+}
+
+function balanceToMinorUnits(balance, currency) {
+  const value = Number(balance ?? 0);
+
+  if (!Number.isFinite(value) || value < 0) {
+    return null;
   }
 
   if (currency === "THB") {
+    const minor = Math.round(value * 100);
 
-    return Number.isInteger(amount * 100);
+    if (
+      Math.abs(value * 100 - minor) > 0.000001 ||
+      !Number.isSafeInteger(minor)
+    ) {
+      return null;
+    }
 
+    return minor;
   }
 
-  return false;
+  if (currency === "MMK") {
+    if (
+      !Number.isInteger(value) ||
+      !Number.isSafeInteger(value)
+    ) {
+      return null;
+    }
 
+    return value;
+  }
+
+  return null;
+}
+
+function minorUnitsToMoney(value, currency) {
+  if (currency === "THB") {
+    return Number((value / 100).toFixed(2));
+  }
+
+  return value;
 }
 
 // ==========================================
-// AUTHENTICATION MIDDLEWARE
+// AUTHENTICATION
 // ==========================================
 
 async function requireAuth(req, res, next) {
-
   try {
-
     const authorization =
       req.headers.authorization || "";
 
@@ -280,30 +284,32 @@ async function requireAuth(req, res, next) {
     );
 
     if (!match) {
-
       return sendError(
         res,
         401,
         "Authentication token is required."
       );
-
     }
 
     const decodedToken =
       await firebaseAuth.verifyIdToken(match[1]);
 
+    if (!decodedToken.uid) {
+      return sendError(
+        res,
+        401,
+        "Invalid login session."
+      );
+    }
+
     req.user = {
-
       uid: decodedToken.uid,
-
       email: decodedToken.email || ""
-
     };
 
-    next();
+    return next();
 
   } catch (error) {
-
     console.error(
       "AUTHENTICATION ERROR:",
       error.message
@@ -314,9 +320,7 @@ async function requireAuth(req, res, next) {
       401,
       "Invalid or expired login session. Please log in again."
     );
-
   }
-
 }
 
 // ==========================================
@@ -324,19 +328,12 @@ async function requireAuth(req, res, next) {
 // ==========================================
 
 app.get("/api/health", (req, res) => {
-
   return res.json({
-
     success: true,
-
-    message: "MYZEN MONEY BACKEND IS RUNNING",
-
-    demoMode: DEMO_MODE,
-
+    message: "MYZEN MONEY PRODUCTION WALLET API IS RUNNING",
+    transferMode: "WALLET_TO_WALLET",
     timestamp: new Date().toISOString()
-
   });
-
 });
 
 // ==========================================
@@ -348,9 +345,7 @@ app.get(
   "/api/me",
   requireAuth,
   async (req, res) => {
-
     try {
-
       const userRef = db
         .collection("users")
         .doc(req.user.uid);
@@ -358,25 +353,21 @@ app.get(
       const userSnap = await userRef.get();
 
       if (!userSnap.exists) {
-
         return sendError(
           res,
           404,
           "Wallet profile not found."
         );
-
       }
 
       const profile = userSnap.data();
 
       if (profile.status !== "approved") {
-
         return sendError(
           res,
           403,
           "Your account is not approved."
         );
-
       }
 
       const country = normalizeCountry(
@@ -384,52 +375,50 @@ app.get(
       );
 
       if (!country) {
-
         return sendError(
           res,
           400,
           "Unsupported wallet country."
         );
+      }
 
+      const currency = getCurrency(country);
+
+      const balance = Number(profile.balance ?? 0);
+
+      if (
+        !Number.isFinite(balance) ||
+        balance < 0
+      ) {
+        return sendError(
+          res,
+          400,
+          "Wallet balance is invalid."
+        );
       }
 
       return res.json({
-
         success: true,
 
         profile: {
-
           uid: req.user.uid,
-
           name: profile.name || "",
-
           country,
-
-          currency: getCurrency(country),
-
-          balance: Number(profile.balance || 0),
-
+          currency,
+          balance,
           status: profile.status
-
         }
-
       });
 
     } catch (error) {
-
-      console.error(
-        "PROFILE API ERROR:",
-        error
-      );
+      console.error("PROFILE API ERROR:", error);
 
       return sendError(
         res,
         500,
         "Unable to load wallet profile."
       );
-
     }
-
   }
 );
 
@@ -442,24 +431,18 @@ app.post(
   "/api/lookup",
   requireAuth,
   async (req, res) => {
-
     try {
-
       const code = String(
         req.body.code || ""
       ).trim();
 
       if (!/^\d{6}$/.test(code)) {
-
         return sendError(
           res,
           400,
           "Receive Code must contain exactly 6 digits."
         );
-
       }
-
-      // Sender profile
 
       const senderRef = db
         .collection("users")
@@ -468,25 +451,21 @@ app.post(
       const senderSnap = await senderRef.get();
 
       if (!senderSnap.exists) {
-
         return sendError(
           res,
           404,
           "Your wallet profile was not found."
         );
-
       }
 
       const sender = senderSnap.data();
 
       if (sender.status !== "approved") {
-
         return sendError(
           res,
           403,
           "Your wallet is not approved."
         );
-
       }
 
       const senderCountry = normalizeCountry(
@@ -494,16 +473,12 @@ app.post(
       );
 
       if (!senderCountry) {
-
         return sendError(
           res,
           400,
           "Your wallet country is invalid."
         );
-
       }
-
-      // Receive code document
 
       const codeRef = db
         .collection("receiveCodes")
@@ -512,13 +487,11 @@ app.post(
       const codeSnap = await codeRef.get();
 
       if (!codeSnap.exists) {
-
         return sendError(
           res,
           404,
           "Receive Code not found."
         );
-
       }
 
       const codeData = codeSnap.data();
@@ -527,26 +500,20 @@ app.post(
         codeData.uid || codeData.userId || "";
 
       if (!recipientUid) {
-
         return sendError(
           res,
           400,
           "Receive Code is not linked to a wallet."
         );
-
       }
 
       if (recipientUid === req.user.uid) {
-
         return sendError(
           res,
           400,
           "You cannot transfer to yourself."
         );
-
       }
-
-      // Recipient profile
 
       const recipientRef = db
         .collection("users")
@@ -555,25 +522,21 @@ app.post(
       const recipientSnap = await recipientRef.get();
 
       if (!recipientSnap.exists) {
-
         return sendError(
           res,
           404,
           "Recipient wallet was not found."
         );
-
       }
 
       const recipient = recipientSnap.data();
 
       if (recipient.status !== "approved") {
-
         return sendError(
           res,
           403,
           "Recipient account is not approved."
         );
-
       }
 
       const recipientCountry = normalizeCountry(
@@ -584,53 +547,39 @@ app.post(
         !recipientCountry ||
         recipientCountry !== senderCountry
       ) {
-
         return sendError(
           res,
           400,
           "Sender and recipient must use the same country wallet."
         );
-
       }
 
       return res.json({
-
         success: true,
 
         message: "Recipient found successfully.",
 
         recipient: {
-
           uid: recipientUid,
-
           name: recipient.name || "",
-
           country: recipientCountry
-
         }
-
       });
 
     } catch (error) {
-
-      console.error(
-        "LOOKUP API ERROR:",
-        error
-      );
+      console.error("LOOKUP API ERROR:", error);
 
       return sendError(
         res,
         500,
         "Unable to find recipient."
       );
-
     }
-
   }
 );
 
 // ==========================================
-// DEMO WALLET TRANSFER
+// REAL WALLET TRANSFER
 // POST /api/transfer
 // ==========================================
 
@@ -638,21 +587,7 @@ app.post(
   "/api/transfer",
   requireAuth,
   async (req, res) => {
-
     try {
-
-      // Real-money transfers are not enabled.
-
-      if (!DEMO_MODE) {
-
-        return sendError(
-          res,
-          403,
-          "Demo transfer mode is disabled."
-        );
-
-      }
-
       const code = String(
         req.body.code || ""
       ).trim();
@@ -680,71 +615,65 @@ app.post(
       // ======================================
 
       if (!/^\d{6}$/.test(code)) {
-
         return sendError(
           res,
           400,
           "Invalid Receive Code."
         );
-
       }
 
       if (
         !recipientUid ||
         recipientUid.length > 128
       ) {
-
         return sendError(
           res,
           400,
           "Invalid recipient account."
         );
-
       }
 
-      if (
-        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(transferId)
-      ) {
+      const uuidPattern =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+      if (!uuidPattern.test(transferId)) {
         return sendError(
           res,
           400,
           "Invalid transfer ID."
         );
-
       }
 
       if (
         currency !== "THB" &&
         currency !== "MMK"
       ) {
-
         return sendError(
           res,
           400,
           "Unsupported currency."
         );
-
       }
 
-      if (!validAmount(amount, currency)) {
+      const amountMinor = moneyToMinorUnits(
+        amount,
+        currency
+      );
 
+      if (amountMinor === null) {
         return sendError(
           res,
           400,
           "Invalid transfer amount."
         );
-
       }
 
       if (recipientUid === req.user.uid) {
-
         return sendError(
           res,
           400,
           "You cannot transfer to yourself."
         );
-
       }
 
       // ======================================
@@ -767,15 +696,62 @@ app.post(
         .collection("walletTransfers")
         .doc(transferId);
 
+      const senderLedgerRef = db
+        .collection("walletLedger")
+        .doc(transferId + "_DEBIT");
+
+      const recipientLedgerRef = db
+        .collection("walletLedger")
+        .doc(transferId + "_CREDIT");
+
       // ======================================
-      // FIRESTORE TRANSACTION
+      // ATOMIC FIRESTORE TRANSACTION
       // ======================================
 
-      const transferResult = await db.runTransaction(
+      const result = await db.runTransaction(
         async (transaction) => {
 
-          // Read all documents before writing.
+          // Read existing transfer first.
+          const existingTransferSnap =
+            await transaction.get(transferRef);
 
+          // ==================================
+          // IDEMPOTENCY / RETRY PROTECTION
+          // ==================================
+
+          if (existingTransferSnap.exists) {
+            const existing = existingTransferSnap.data();
+
+            const sameRequest =
+              existing.senderUid === req.user.uid &&
+              existing.recipientUid === recipientUid &&
+              existing.code === code &&
+              existing.amount === amount &&
+              existing.currency === currency;
+
+            if (!sameRequest) {
+              throw new Error(
+                "DUPLICATE_TRANSFER_ID"
+              );
+            }
+
+            if (existing.status !== "completed") {
+              throw new Error(
+                "TRANSFER_NOT_COMPLETED"
+              );
+            }
+
+            return {
+              transferId,
+              amount: existing.amount,
+              currency: existing.currency,
+              senderBalance: existing.senderBalanceAfter,
+              recipientBalance: existing.recipientBalanceAfter,
+              alreadyProcessed: true
+            };
+          }
+
+          // Read all required documents.
           const senderSnap =
             await transaction.get(senderRef);
 
@@ -785,41 +761,18 @@ app.post(
           const codeSnap =
             await transaction.get(codeRef);
 
-          const existingTransferSnap =
-            await transaction.get(transferRef);
-
-          // ==================================
-          // DUPLICATE TRANSFER PROTECTION
-          // ==================================
-
-          if (existingTransferSnap.exists) {
-
-            throw new Error(
-              "DUPLICATE_TRANSFER_ID"
-            );
-
-          }
-
           // ==================================
           // CHECK SENDER
           // ==================================
 
           if (!senderSnap.exists) {
-
-            throw new Error(
-              "SENDER_NOT_FOUND"
-            );
-
+            throw new Error("SENDER_NOT_FOUND");
           }
 
           const sender = senderSnap.data();
 
           if (sender.status !== "approved") {
-
-            throw new Error(
-              "SENDER_NOT_APPROVED"
-            );
-
+            throw new Error("SENDER_NOT_APPROVED");
           }
 
           // ==================================
@@ -827,21 +780,13 @@ app.post(
           // ==================================
 
           if (!recipientSnap.exists) {
-
-            throw new Error(
-              "RECIPIENT_NOT_FOUND"
-            );
-
+            throw new Error("RECIPIENT_NOT_FOUND");
           }
 
           const recipient = recipientSnap.data();
 
           if (recipient.status !== "approved") {
-
-            throw new Error(
-              "RECIPIENT_NOT_APPROVED"
-            );
-
+            throw new Error("RECIPIENT_NOT_APPROVED");
           }
 
           // ==================================
@@ -849,11 +794,7 @@ app.post(
           // ==================================
 
           if (!codeSnap.exists) {
-
-            throw new Error(
-              "RECEIVE_CODE_NOT_FOUND"
-            );
-
+            throw new Error("RECEIVE_CODE_NOT_FOUND");
           }
 
           const codeData = codeSnap.data();
@@ -862,11 +803,7 @@ app.post(
             codeData.uid || codeData.userId || "";
 
           if (linkedUid !== recipientUid) {
-
-            throw new Error(
-              "RECEIVE_CODE_MISMATCH"
-            );
-
+            throw new Error("RECEIVE_CODE_MISMATCH");
           }
 
           // ==================================
@@ -885,11 +822,7 @@ app.post(
             !senderCountry ||
             senderCountry !== recipientCountry
           ) {
-
-            throw new Error(
-              "COUNTRY_MISMATCH"
-            );
-
+            throw new Error("COUNTRY_MISMATCH");
           }
 
           const expectedCurrency = getCurrency(
@@ -897,189 +830,205 @@ app.post(
           );
 
           if (currency !== expectedCurrency) {
-
-            throw new Error(
-              "CURRENCY_MISMATCH"
-            );
-
+            throw new Error("CURRENCY_MISMATCH");
           }
 
           // ==================================
           // CHECK BALANCES
           // ==================================
 
-          const senderBalance = Number(
-            sender.balance
-          );
-
-          const recipientBalance = Number(
-            recipient.balance || 0
-          );
-
-          if (
-            !Number.isFinite(senderBalance) ||
-            senderBalance < 0
-          ) {
-
-            throw new Error(
-              "INVALID_SENDER_BALANCE"
+          const senderBalanceMinor =
+            balanceToMinorUnits(
+              sender.balance,
+              currency
             );
 
-          }
-
-          if (
-            !Number.isFinite(recipientBalance) ||
-            recipientBalance < 0
-          ) {
-
-            throw new Error(
-              "INVALID_RECIPIENT_BALANCE"
+          const recipientBalanceMinor =
+            balanceToMinorUnits(
+              recipient.balance,
+              currency
             );
 
+          if (senderBalanceMinor === null) {
+            throw new Error("INVALID_SENDER_BALANCE");
           }
 
-          if (senderBalance < amount) {
-
-            throw new Error(
-              "INSUFFICIENT_BALANCE"
-            );
-
+          if (recipientBalanceMinor === null) {
+            throw new Error("INVALID_RECIPIENT_BALANCE");
           }
 
-          // ==================================
-          // CALCULATE NEW BALANCES
-          // ==================================
+          if (senderBalanceMinor < amountMinor) {
+            throw new Error("INSUFFICIENT_BALANCE");
+          }
 
-          const newSenderBalance =
-            Number((senderBalance - amount).toFixed(2));
+          const newSenderMinor =
+            senderBalanceMinor - amountMinor;
 
-          const newRecipientBalance =
-            Number((recipientBalance + amount).toFixed(2));
+          const newRecipientMinor =
+            recipientBalanceMinor + amountMinor;
 
-          // ==================================
-          // UPDATE SENDER
-          // ==================================
+          if (!Number.isSafeInteger(newRecipientMinor)) {
+            throw new Error("BALANCE_LIMIT_EXCEEDED");
+          }
 
-          transaction.update(
-            senderRef,
-            {
-              balance: newSenderBalance,
+          const senderBefore = minorUnitsToMoney(
+            senderBalanceMinor,
+            currency
+          );
 
-              updatedAt: FieldValue.serverTimestamp()
-            }
+          const recipientBefore = minorUnitsToMoney(
+            recipientBalanceMinor,
+            currency
+          );
+
+          const senderAfter = minorUnitsToMoney(
+            newSenderMinor,
+            currency
+          );
+
+          const recipientAfter = minorUnitsToMoney(
+            newRecipientMinor,
+            currency
           );
 
           // ==================================
-          // UPDATE RECIPIENT
+          // UPDATE BOTH WALLETS
           // ==================================
 
-          transaction.update(
-            recipientRef,
-            {
-              balance: newRecipientBalance,
+          transaction.update(senderRef, {
+            balance: senderAfter,
+            updatedAt: FieldValue.serverTimestamp()
+          });
 
-              updatedAt: FieldValue.serverTimestamp()
-            }
-          );
+          transaction.update(recipientRef, {
+            balance: recipientAfter,
+            updatedAt: FieldValue.serverTimestamp()
+          });
 
           // ==================================
-          // SAVE TRANSFER RECORD
+          // TRANSFER HISTORY
           // ==================================
 
-          transaction.set(
-            transferRef,
-            {
-
-              transferId,
-
-              senderUid: req.user.uid,
-
-              recipientUid,
-
-              senderName: sender.name || "",
-
-              recipientName: recipient.name || "",
-
-              amount,
-
-              currency,
-
-              note,
-
-              type: "qr",
-
-              mode: "DEMO",
-
-              demo: true,
-
-              status: "completed",
-
-              senderBalanceBefore: senderBalance,
-
-              senderBalanceAfter: newSenderBalance,
-
-              recipientBalanceBefore: recipientBalance,
-
-              recipientBalanceAfter: newRecipientBalance,
-
-              createdAt: FieldValue.serverTimestamp(),
-
-              updatedAt: FieldValue.serverTimestamp()
-
-            }
-          );
-
-          return {
-
+          transaction.set(transferRef, {
             transferId,
 
-            amount,
+            senderUid: req.user.uid,
+            recipientUid,
 
+            senderName: sender.name || "",
+            recipientName: recipient.name || "",
+
+            code,
+
+            amount,
+            currency,
+            note,
+
+            type: "wallet_transfer",
+            mode: "PRODUCTION",
+            demo: false,
+
+            status: "completed",
+
+            senderBalanceBefore: senderBefore,
+            senderBalanceAfter: senderAfter,
+
+            recipientBalanceBefore: recipientBefore,
+            recipientBalanceAfter: recipientAfter,
+
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
+          });
+
+          // ==================================
+          // DOUBLE-SIDED WALLET LEDGER
+          // ==================================
+
+          transaction.set(senderLedgerRef, {
+            ledgerId: transferId + "_DEBIT",
+            transferId,
+
+            uid: req.user.uid,
+            counterpartyUid: recipientUid,
+
+            direction: "debit",
+            amount,
             currency,
 
-            senderBalance: newSenderBalance,
+            balanceBefore: senderBefore,
+            balanceAfter: senderAfter,
 
-            recipientBalance: newRecipientBalance
+            status: "completed",
 
+            createdAt: FieldValue.serverTimestamp()
+          });
+
+          transaction.set(recipientLedgerRef, {
+            ledgerId: transferId + "_CREDIT",
+            transferId,
+
+            uid: recipientUid,
+            counterpartyUid: req.user.uid,
+
+            direction: "credit",
+            amount,
+            currency,
+
+            balanceBefore: recipientBefore,
+            balanceAfter: recipientAfter,
+
+            status: "completed",
+
+            createdAt: FieldValue.serverTimestamp()
+          });
+
+          return {
+            transferId,
+            amount,
+            currency,
+
+            senderBalance: senderAfter,
+            recipientBalance: recipientAfter,
+
+            alreadyProcessed: false
           };
-
         }
       );
 
-      // ======================================
-      // SUCCESS RESPONSE
-      // ======================================
-
       console.log(
-        "DEMO TRANSFER SUCCESS:",
-        transferResult.transferId
+        "WALLET TRANSFER SUCCESS:",
+        result.transferId,
+        "SENDER:",
+        req.user.uid,
+        "RECIPIENT:",
+        recipientUid,
+        "AMOUNT:",
+        result.amount,
+        result.currency
       );
 
       return res.json({
-
         success: true,
 
-        message: "Demo transfer completed successfully.",
+        message: result.alreadyProcessed
+          ? "Transfer was already completed."
+          : "Wallet transfer completed successfully.",
 
-        transfer: transferResult
-
+        transfer: result
       });
 
     } catch (error) {
-
       console.error(
-        "TRANSFER API ERROR:",
+        "WALLET TRANSFER ERROR:",
         error
       );
 
-      // ======================================
-      // ERROR MESSAGES
-      // ======================================
-
       const errorMessages = {
-
         DUPLICATE_TRANSFER_ID:
-          "This transfer ID has already been used.",
+          "This transfer ID has already been used for another request.",
+
+        TRANSFER_NOT_COMPLETED:
+          "This transfer is not completed. Please contact support.",
 
         SENDER_NOT_FOUND:
           "Sender wallet not found.",
@@ -1112,21 +1061,30 @@ app.post(
           "Recipient balance is invalid.",
 
         INSUFFICIENT_BALANCE:
-          "Insufficient wallet balance."
+          "Insufficient wallet balance.",
 
+        BALANCE_LIMIT_EXCEEDED:
+          "Recipient wallet balance limit exceeded."
       };
 
-      const message =
-        errorMessages[error.message];
+      const message = errorMessages[error.message];
 
       if (message) {
+        const status =
+          error.message === "INSUFFICIENT_BALANCE" ? 400 :
+          error.message === "SENDER_NOT_FOUND" ? 404 :
+          error.message === "RECIPIENT_NOT_FOUND" ? 404 :
+          error.message === "RECEIVE_CODE_NOT_FOUND" ? 404 :
+          error.message === "SENDER_NOT_APPROVED" ? 403 :
+          error.message === "RECIPIENT_NOT_APPROVED" ? 403 :
+          400;
 
         return sendError(
           res,
-          400,
-          message
+          status,
+          message,
+          error.message
         );
-
       }
 
       return sendError(
@@ -1134,9 +1092,7 @@ app.post(
         500,
         "Transfer failed. Please try again."
       );
-
     }
-
   }
 );
 
@@ -1145,13 +1101,11 @@ app.post(
 // ==========================================
 
 app.use("/api", (req, res) => {
-
   return sendError(
     res,
     404,
     "API endpoint not found."
   );
-
 });
 
 // ==========================================
@@ -1159,11 +1113,7 @@ app.use("/api", (req, res) => {
 // ==========================================
 
 app.use((error, req, res, next) => {
-
-  console.error(
-    "SERVER ERROR:",
-    error
-  );
+  console.error("SERVER ERROR:", error);
 
   if (res.headersSent) {
     return next(error);
@@ -1174,7 +1124,6 @@ app.use((error, req, res, next) => {
     500,
     "Internal server error."
   );
-
 });
 
 // ==========================================
@@ -1182,15 +1131,9 @@ app.use((error, req, res, next) => {
 // ==========================================
 
 app.listen(PORT, () => {
-
   console.log("--------------------------------");
-
   console.log("MYZEN MONEY BACKEND STARTED");
-
   console.log("PORT:", PORT);
-
-  console.log("DEMO MODE:", DEMO_MODE);
-
+  console.log("TRANSFER MODE: WALLET_TO_WALLET");
   console.log("--------------------------------");
-
 });
