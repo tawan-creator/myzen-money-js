@@ -1,3 +1,4 @@
+
 import { auth, db } from "./firebase.js";
 
 import {
@@ -34,6 +35,10 @@ const els = {
 let currentUser = null;
 let currentMethods = [];
 let selectedProfile = null;
+let currentRates = {
+  thbToMmk: null,
+  mmkToThb: null
+};
 
 function showMessage(message, type = "") {
   els.message.textContent = message;
@@ -49,6 +54,18 @@ function money(value, currency = "THB") {
   }).format(number) + " " + currency;
 }
 
+function formatRate(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number <= 0) {
+    return "Not set";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 6
+  }).format(number);
+}
+
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -57,6 +74,20 @@ function escapeHTML(value) {
     '"': "&quot;",
     "'": "&#039;"
   })[char]);
+}
+
+function safeImageUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+
+    if (url.protocol === "https:" || url.protocol === "http:") {
+      return url.href;
+    }
+  } catch {
+    // Invalid image URL.
+  }
+
+  return "";
 }
 
 async function getToken() {
@@ -117,9 +148,72 @@ async function loadProfile() {
   return { country, currency, balance };
 }
 
+/* EXCHANGE RATES */
+
+async function loadExchangeRates() {
+  try {
+    const data = await apiRequest("/api/exchange-rates");
+
+    const rates = data.rates ||
+      data.exchangeRates ||
+      data;
+
+    currentRates = {
+      thbToMmk: rates.thbToMmk ?? null,
+      mmkToThb: rates.mmkToThb ?? null
+    };
+  } catch (error) {
+    console.warn("Exchange rates could not be loaded:", error.message);
+
+    currentRates = {
+      thbToMmk: null,
+      mmkToThb: null
+    };
+  }
+}
+
+function renderExchangeRates() {
+  return `
+    <div style="
+      margin-bottom:18px;
+      padding:15px;
+      border-radius:12px;
+      background:rgba(232,189,104,.08);
+      border:1px solid rgba(232,189,104,.2);
+    ">
+      <strong style="display:block;margin-bottom:10px;">
+        Exchange Rates
+      </strong>
+
+      <p style="margin:6px 0;">
+        <strong>1 THB =</strong>
+        ${escapeHTML(formatRate(currentRates.thbToMmk))}
+        MMK
+      </p>
+
+      <p style="margin:6px 0;">
+        <strong>1 MMK =</strong>
+        ${escapeHTML(formatRate(currentRates.mmkToThb))}
+        THB
+      </p>
+
+      <small style="opacity:.7;">
+        Rates are informational and do not automatically change your wallet balance.
+      </small>
+    </div>
+  `;
+}
+
+/* PAYMENT METHOD AND QR */
+
 function renderPaymentInformation(method) {
+  const exchangeHTML = renderExchangeRates();
+
   if (!method) {
-    els.paymentInfo.textContent = "Select a payment method to view payment instructions.";
+    els.paymentInfo.innerHTML = `
+      ${exchangeHTML}
+      <p>Select a payment method to view payment instructions and QR code.</p>
+    `;
     return;
   }
 
@@ -127,19 +221,71 @@ function renderPaymentInformation(method) {
   const accountName = method.accountName || "";
   const bank = method.bank || "";
   const instructions = method.instructions || "";
+  const qrUrl = safeImageUrl(method.qrUrl);
 
   els.paymentInfo.innerHTML = `
+    ${exchangeHTML}
+
     <p><strong>Payment Method:</strong> ${escapeHTML(method.name)}</p>
-    ${bank ? `<p><strong>Bank / Provider:</strong> ${escapeHTML(bank)}</p>` : ""}
-    ${accountName ? `<p><strong>Account Name:</strong> ${escapeHTML(accountName)}</p>` : ""}
+
+    ${bank ? `
+      <p><strong>Bank / Provider:</strong> ${escapeHTML(bank)}</p>
+    ` : ""}
+
+    ${accountName ? `
+      <p><strong>Account Name:</strong> ${escapeHTML(accountName)}</p>
+    ` : ""}
+
     ${accountNumber ? `
       <p><strong>Account Number:</strong></p>
       <div class="copy-row">
-        <span id="receivingAccountNumber">${escapeHTML(accountNumber)}</span>
-        <button class="secondary" id="copyAccountNumber" type="button">Copy</button>
+        <span id="receivingAccountNumber">
+          ${escapeHTML(accountNumber)}
+        </span>
+        <button class="secondary" id="copyAccountNumber" type="button">
+          Copy
+        </button>
       </div>
     ` : ""}
-    ${instructions ? `<p><strong>Instructions:</strong><br>${escapeHTML(instructions).replace(/\n/g, "<br>")}</p>` : ""}
+
+    ${qrUrl ? `
+      <div style="
+        margin:18px 0;
+        padding:15px;
+        text-align:center;
+        background:#fff;
+        border-radius:12px;
+      ">
+        <p style="color:#111;font-weight:800;margin:0 0 12px;">
+          Scan to Pay
+        </p>
+
+        <img
+          src="${escapeHTML(qrUrl)}"
+          alt="Payment QR Code"
+          loading="lazy"
+          style="
+            display:block;
+            width:100%;
+            max-width:280px;
+            height:auto;
+            margin:auto;
+            object-fit:contain;
+          "
+        >
+      </div>
+    ` : `
+      <p class="muted">
+        QR code is not available for this payment method.
+      </p>
+    `}
+
+    ${instructions ? `
+      <p>
+        <strong>Instructions:</strong><br>
+        ${escapeHTML(instructions).replace(/\n/g, "<br>")}
+      </p>
+    ` : ""}
   `;
 
   const copyButton = $("copyAccountNumber");
@@ -161,12 +307,14 @@ async function loadPaymentMethods() {
 
   currentMethods = Array.isArray(data.methods) ? data.methods : [];
 
-  els.method.innerHTML = '<option value="">Select payment method</option>';
+  els.method.innerHTML =
+    '<option value="">Select payment method</option>';
 
   if (!currentMethods.length) {
-    els.method.innerHTML = '<option value="">No payment methods available</option>';
-    els.paymentInfo.textContent =
-      "There are currently no active payment methods. Please contact support.";
+    els.method.innerHTML =
+      '<option value="">No payment methods available</option>';
+
+    renderPaymentInformation(null);
     return;
   }
 
@@ -181,6 +329,8 @@ async function loadPaymentMethods() {
   renderPaymentInformation(null);
 }
 
+/* DEPOSIT HISTORY */
+
 async function loadDepositHistory() {
   els.history.textContent = "Loading deposit history...";
 
@@ -188,7 +338,8 @@ async function loadDepositHistory() {
   const deposits = Array.isArray(data.deposits) ? data.deposits : [];
 
   if (!deposits.length) {
-    els.history.innerHTML = '<div class="empty">No deposit requests yet.</div>';
+    els.history.innerHTML =
+      '<div class="empty">No deposit requests yet.</div>';
     return;
   }
 
@@ -201,10 +352,15 @@ async function loadDepositHistory() {
       <div class="history-item">
         <div>
           <strong>${escapeHTML(item.methodName || "Deposit")}</strong>
-          <div class="muted">${escapeHTML(item.transactionId || "")}</div>
-          <span class="status ${escapeHTML(status)}">${escapeHTML(status)}</span>
+          <div class="muted">
+            ${escapeHTML(item.transactionId || "")}
+          </div>
+          <span class="status ${escapeHTML(status)}">
+            ${escapeHTML(status)}
+          </span>
           <div class="muted">${escapeHTML(date)}</div>
         </div>
+
         <strong>${escapeHTML(money(item.amount, currency))}</strong>
       </div>
     `;
@@ -229,10 +385,17 @@ function formatDate(value) {
   return date.toLocaleString();
 }
 
+/* PAYMENT METHOD SELECTION */
+
 els.method.addEventListener("change", () => {
-  const method = currentMethods.find((item) => item.id === els.method.value);
+  const method = currentMethods.find(
+    (item) => item.id === els.method.value
+  );
+
   renderPaymentInformation(method || null);
 });
+
+/* PAYMENT PROOF PREVIEW */
 
 els.proof.addEventListener("change", () => {
   const file = els.proof.files?.[0];
@@ -243,7 +406,11 @@ els.proof.addEventListener("change", () => {
     return;
   }
 
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+  ];
 
   if (!allowedTypes.includes(file.type)) {
     els.proof.value = "";
@@ -263,6 +430,8 @@ els.proof.addEventListener("change", () => {
   els.preview.style.display = "block";
   showMessage("");
 });
+
+/* SUBMIT DEPOSIT */
 
 els.form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -303,6 +472,7 @@ els.form.addEventListener("submit", async (event) => {
   }
 
   const formData = new FormData();
+
   formData.append("amount", String(amount));
   formData.append("methodId", methodId);
   formData.append("transactionId", transactionId);
@@ -311,6 +481,7 @@ els.form.addEventListener("submit", async (event) => {
 
   els.submit.disabled = true;
   els.submit.textContent = "Submitting...";
+
   showMessage("Uploading screenshot and submitting your request...");
 
   try {
@@ -320,7 +491,8 @@ els.form.addEventListener("submit", async (event) => {
     });
 
     showMessage(
-      result.message || "Deposit request submitted. Please wait for Admin verification.",
+      result.message ||
+      "Deposit request submitted. Please wait for Admin verification.",
       "success"
     );
 
@@ -332,12 +504,18 @@ els.form.addEventListener("submit", async (event) => {
     await loadProfile();
   } catch (error) {
     console.error("Deposit submission error:", error);
-    showMessage(error.message || "Unable to submit deposit request.", "error");
+
+    showMessage(
+      error.message || "Unable to submit deposit request.",
+      "error"
+    );
   } finally {
     els.submit.disabled = false;
     els.submit.textContent = "Submit Deposit Request";
   }
 });
+
+/* LOGOUT */
 
 els.logout.addEventListener("click", async () => {
   try {
@@ -349,6 +527,8 @@ els.logout.addEventListener("click", async () => {
   }
 });
 
+/* AUTHENTICATION AND INITIALIZATION */
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "login.html";
@@ -359,10 +539,15 @@ onAuthStateChanged(auth, async (user) => {
 
   try {
     await loadProfile();
+    await loadExchangeRates();
     await loadPaymentMethods();
     await loadDepositHistory();
   } catch (error) {
     console.error("Deposit page initialization error:", error);
-    showMessage(error.message || "Unable to load deposit information.", "error");
+
+    showMessage(
+      error.message || "Unable to load deposit information.",
+      "error"
+    );
   }
 });

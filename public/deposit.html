@@ -1,166 +1,464 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080f1e">
+  <meta name="description" content="MYZEN MONEY Premium Wallet Deposit">
   <title>Deposit | MYZEN MONEY</title>
+
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #080f1e;
+      --panel: #111d32;
+      --panel2: #172640;
+      --gold: #e8bd68;
+      --gold2: #f6d995;
+      --text: #f5f6fa;
+      --muted: #9eabc0;
+      --border: rgba(232,189,104,.2);
+      --green: #36d399;
+      --red: #ff7777;
+    }
+
     body {
       margin: 0;
-      padding: 20px;
-      background: #f3f6fb;
-      color: #172033;
-      font-family: Arial, sans-serif;
+      padding: 25px 18px 50px;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 50% -15%, #253b5e 0%, transparent 55%),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, Arial, sans-serif;
     }
-    .container { max-width: 760px; margin: 0 auto; }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
     .topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      padding: 5px 2px;
     }
-    .brand { font-size: 22px; font-weight: 800; color: #155eef; }
-    .card {
-      background: #fff;
-      padding: 22px;
-      margin-bottom: 18px;
-      border-radius: 16px;
-      box-shadow: 0 5px 24px rgba(20, 40, 80, .07);
+
+    .brand {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: var(--gold);
     }
-    h1 { font-size: 24px; margin: 0 0 8px; }
-    h2 { font-size: 18px; margin: 0 0 16px; }
-    .muted { color: #667085; font-size: 14px; line-height: 1.6; }
-    .balance {
-      margin-top: 16px;
-      padding: 18px;
-      border-radius: 12px;
-      background: #eef4ff;
-    }
-    .balance strong {
-      display: block;
-      margin-top: 7px;
-      color: #155eef;
-      font-size: 27px;
-    }
-    label {
-      display: block;
-      font-size: 14px;
-      font-weight: 700;
-      margin: 15px 0 7px;
-    }
-    input, select, textarea {
-      display: block;
-      width: 100%;
-      border: 1px solid #d0d5dd;
-      border-radius: 9px;
-      padding: 12px;
-      background: #fff;
-      color: #172033;
-      font-size: 15px;
-      outline: none;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: #155eef;
-      box-shadow: 0 0 0 3px rgba(21, 94, 239, .1);
-    }
-    textarea { min-height: 85px; resize: vertical; }
+
     button {
       border: 0;
-      border-radius: 9px;
+      border-radius: 11px;
       padding: 12px 17px;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
+      transition: .2s ease;
     }
-    button:disabled { opacity: .55; cursor: not-allowed; }
-    .primary { width: 100%; margin-top: 18px; background: #155eef; color: #fff; }
-    .secondary { background: #eef2f6; color: #344054; }
+
+    button:active {
+      transform: scale(.97);
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .secondary {
+      background: #23344e;
+      border: 1px solid #40516a;
+      color: #e8edf5;
+    }
+
+    .secondary:hover {
+      border-color: var(--gold);
+      color: var(--gold2);
+    }
+
+    .card {
+      position: relative;
+      background: linear-gradient(145deg, #15243c, #101a2d);
+      padding: 25px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0,0,0,.22);
+      overflow: hidden;
+    }
+
+    .card h1 {
+      font-size: 27px;
+      margin: 0 0 10px;
+      color: var(--gold2);
+    }
+
+    .card h2 {
+      font-size: 19px;
+      margin: 0 0 16px;
+      color: var(--gold2);
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .balance {
+      position: relative;
+      margin-top: 20px;
+      padding: 25px;
+      border-radius: 17px;
+      border: 1px solid rgba(232,189,104,.4);
+      background:
+        radial-gradient(circle at top right, rgba(232,189,104,.2), transparent 55%),
+        linear-gradient(120deg, #1b3150, #101b30);
+    }
+
+    .balance strong {
+      display: block;
+      margin: 10px 0;
+      color: var(--gold2);
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: .5px;
+    }
+
+    .balance .muted {
+      font-size: 13px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 800;
+      color: #e6c982;
+      margin: 18px 0 8px;
+      letter-spacing: .3px;
+    }
+
+    input,
+    select,
+    textarea {
+      display: block;
+      width: 100%;
+      border: 1px solid #34445e;
+      border-radius: 11px;
+      padding: 14px;
+      background: #0b1527;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: .2s;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #738198;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(232,189,104,.12);
+    }
+
+    input[type="file"] {
+      padding: 12px;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    input[type="file"]::file-selector-button {
+      background: #263953;
+      color: var(--gold2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      margin-right: 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    textarea {
+      min-height: 95px;
+      resize: vertical;
+    }
+
+    .primary {
+      width: 100%;
+      margin-top: 20px;
+      padding: 16px;
+      background: linear-gradient(110deg, #d9a94d, #f5d991);
+      color: #172033;
+      font-size: 15px;
+      font-weight: 900;
+      border-radius: 12px;
+      box-shadow: 0 7px 20px rgba(232,189,104,.16);
+    }
+
+    .primary:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 9px 25px rgba(232,189,104,.25);
+    }
+
     .payment-box {
       margin-top: 16px;
-      padding: 16px;
-      border: 1px solid #dbe5f5;
-      border-radius: 12px;
-      background: #f8faff;
-      line-height: 1.7;
+      padding: 19px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(145deg, #192b46, #101c30);
+      color: #dce5f2;
+      line-height: 1.8;
       overflow-wrap: anywhere;
     }
-    .payment-box p { margin: 6px 0; }
-    .payment-box strong { color: #344054; }
-    .copy-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-    .copy-row span { flex: 1; font-weight: 700; overflow-wrap: anywhere; }
-    .notice {
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 9px;
-      background: #fff7e6;
-      color: #8a5700;
-      font-size: 13px;
-      line-height: 1.6;
+
+    .payment-box p {
+      margin: 7px 0;
     }
+
+    .payment-box strong {
+      color: var(--gold2);
+    }
+
+    .copy-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 9px;
+      padding: 10px;
+      background: #0b1527;
+      border: 1px solid #34445e;
+      border-radius: 9px;
+    }
+
+    .copy-row span {
+      flex: 1;
+      font-weight: 800;
+      color: var(--gold2);
+      overflow-wrap: anywhere;
+    }
+
+    .notice {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 11px;
+      border: 1px solid rgba(232,189,104,.24);
+      background: rgba(232,189,104,.08);
+      color: #e9cb8e;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
     .file-preview {
       display: none;
       max-width: 100%;
-      max-height: 260px;
-      margin-top: 12px;
-      border-radius: 10px;
-      border: 1px solid #e4e7ec;
+      max-height: 280px;
+      margin-top: 14px;
+      border-radius: 13px;
+      border: 1px solid var(--border);
+      object-fit: contain;
+      background: #0b1527;
     }
-    .message { margin-top: 12px; font-size: 14px; line-height: 1.6; }
-    .message.error { color: #b42318; }
-    .message.success { color: #067647; }
+
+    .message {
+      margin-top: 14px;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .message.error {
+      color: var(--red);
+    }
+
+    .message.success {
+      color: var(--green);
+    }
+
     .history-item {
-      padding: 14px 0;
-      border-bottom: 1px solid #eaecf0;
+      padding: 17px 0;
+      border-bottom: 1px solid rgba(255,255,255,.08);
       display: flex;
       justify-content: space-between;
+      align-items: center;
       gap: 14px;
     }
-    .history-item:last-child { border-bottom: 0; }
+
+    .history-item:last-child {
+      border-bottom: 0;
+    }
+
+    .history-item strong {
+      color: #f2d797;
+    }
+
     .status {
       display: inline-block;
-      margin-top: 5px;
-      padding: 4px 9px;
-      border-radius: 20px;
-      background: #f2f4f7;
+      margin-top: 7px;
+      padding: 5px 11px;
+      border-radius: 30px;
+      background: #263953;
+      color: #dbe5f2;
       font-size: 12px;
+      font-weight: 800;
       text-transform: capitalize;
     }
-    .status.approved { background: #dcfae6; color: #067647; }
-    .status.rejected { background: #fee4e2; color: #b42318; }
-    .status.pending { background: #fff1cc; color: #93370d; }
-    .empty { padding: 15px 0; color: #667085; font-size: 14px; }
+
+    .status.approved {
+      background: rgba(54,211,153,.13);
+      color: #48e0aa;
+    }
+
+    .status.rejected {
+      background: rgba(255,119,119,.13);
+      color: #ff8989;
+    }
+
+    .status.pending {
+      background: rgba(232,189,104,.13);
+      color: var(--gold2);
+    }
+
+    .empty {
+      padding: 18px 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    #paymentMethod {
+      cursor: pointer;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 5px;
+    }
+
+    .section-icon {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      width: 35px;
+      height: 35px;
+      flex-shrink: 0;
+      border-radius: 10px;
+      background: rgba(232,189,104,.12);
+      color: var(--gold2);
+      font-size: 17px;
+    }
+
+    .footer {
+      text-align: center;
+      color: #718099;
+      font-size: 12px;
+      padding: 12px 0 20px;
+    }
+
     @media (max-width: 520px) {
-      body { padding: 12px; }
-      .card { padding: 17px; }
-      .history-item { flex-direction: column; }
+      body {
+        padding: 14px 12px 35px;
+      }
+
+      .container {
+        width: 100%;
+      }
+
+      .card {
+        padding: 19px;
+        border-radius: 16px;
+        margin-bottom: 15px;
+      }
+
+      .card h1 {
+        font-size: 23px;
+      }
+
+      .card h2 {
+        font-size: 17px;
+      }
+
+      .brand {
+        font-size: 19px;
+      }
+
+      .balance {
+        padding: 20px;
+      }
+
+      .balance strong {
+        font-size: 29px;
+      }
+
+      .history-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .copy-row {
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
+
 <body>
   <main class="container">
+
     <header class="topbar">
       <div class="brand">MYZEN MONEY</div>
-      <button class="secondary" id="logoutBtn" type="button">Logout</button>
+      <button class="secondary" id="logoutBtn" type="button">
+        Logout
+      </button>
     </header>
 
     <section class="card">
       <h1>Wallet Deposit</h1>
-      <p class="muted">Transfer money using one of the payment methods below, then submit your transaction details and payment screenshot.</p>
+      <p class="muted">
+        Welcome to MYZEN MONEY. Transfer funds securely using
+        one of the available payment methods below.
+      </p>
 
       <div class="balance">
-        <span class="muted">Your current balance</span>
+        <span class="muted">YOUR CURRENT BALANCE</span>
         <strong id="currentBalance">Loading...</strong>
-        <span class="muted" id="accountCountry">Loading account...</span>
+        <span class="muted" id="accountCountry">
+          Loading account...
+        </span>
       </div>
     </section>
 
     <section class="card">
-      <h2>Payment Information</h2>
-      <p class="muted">Choose an available payment method to see the receiving account details.</p>
+      <div class="section-heading">
+        <span class="section-icon">◆</span>
+        <h2>Payment Information</h2>
+      </div>
 
-      <label for="paymentMethod">Payment Method</label>
+      <p class="muted">
+        Select your preferred payment method to view
+        the receiving account details.
+      </p>
+
+      <label for="paymentMethod">PAYMENT METHOD</label>
+
       <select id="paymentMethod" required>
         <option value="">Loading payment methods...</option>
       </select>
@@ -170,37 +468,119 @@
       </div>
 
       <div id="paymentNotice" class="notice">
-        Only transfer to the account details displayed here. Your wallet will be credited after Admin verifies your payment.
+        Important: Only transfer to the account details
+        displayed here. Your wallet will be credited after
+        Admin verifies your payment.
       </div>
     </section>
 
     <section class="card">
-      <h2>Submit Deposit Request</h2>
+      <div class="section-heading">
+        <span class="section-icon">＋</span>
+        <h2>Submit Deposit Request</h2>
+      </div>
+
+      <p class="muted">
+        Enter your transfer details and upload your
+        payment screenshot to submit your request.
+      </p>
 
       <form id="depositForm">
-        <label for="depositAmount">Deposit Amount</label>
-        <input id="depositAmount" type="number" min="0.01" step="0.01" placeholder="Enter amount" required>
 
-        <label for="transactionId">Transaction ID / Reference</label>
-        <input id="transactionId" type="text" maxlength="100" placeholder="Enter transfer reference" required>
+        <label for="depositAmount">
+          DEPOSIT AMOUNT
+        </label>
 
-        <label for="depositNote">Note (optional)</label>
-        <textarea id="depositNote" maxlength="500" placeholder="Additional information"></textarea>
+        <input
+          id="depositAmount"
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="Enter deposit amount"
+          required
+        >
 
-        <label for="proofFile">Payment Screenshot (required)</label>
-        <input id="proofFile" type="file" accept="image/jpeg,image/png,image/webp" required>
-        <p class="muted">Accepted formats: JPG, PNG, WEBP. Maximum file size: 5 MB.</p>
-        <img id="proofPreview" class="file-preview" alt="Payment screenshot preview">
+        <label for="transactionId">
+          TRANSACTION ID / REFERENCE
+        </label>
 
-        <button id="depositBtn" class="primary" type="submit">Submit Deposit Request</button>
-        <div id="depositMessage" class="message" role="status" aria-live="polite"></div>
+        <input
+          id="transactionId"
+          type="text"
+          maxlength="100"
+          placeholder="Enter transfer reference"
+          required
+        >
+
+        <label for="depositNote">
+          NOTE (OPTIONAL)
+        </label>
+
+        <textarea
+          id="depositNote"
+          maxlength="500"
+          placeholder="Additional information..."
+        ></textarea>
+
+        <label for="proofFile">
+          PAYMENT SCREENSHOT
+        </label>
+
+        <input
+          id="proofFile"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          required
+        >
+
+        <p class="muted">
+          Accepted formats: JPG, PNG, WEBP.
+          Maximum file size: 5 MB.
+        </p>
+
+        <img
+          id="proofPreview"
+          class="file-preview"
+          alt="Payment screenshot preview"
+        >
+
+        <button
+          id="depositBtn"
+          class="primary"
+          type="submit"
+        >
+          SUBMIT DEPOSIT REQUEST
+        </button>
+
+        <div
+          id="depositMessage"
+          class="message"
+          role="status"
+          aria-live="polite"
+        ></div>
+
       </form>
     </section>
 
     <section class="card">
-      <h2>Deposit History</h2>
-      <div id="depositHistory" class="empty">Loading deposit history...</div>
+      <div class="section-heading">
+        <span class="section-icon">↻</span>
+        <h2>Deposit History</h2>
+      </div>
+
+      <p class="muted">
+        Track the status of your deposit requests.
+      </p>
+
+      <div id="depositHistory" class="empty">
+        Loading deposit history...
+      </div>
     </section>
+
+    <footer class="footer">
+      MYZEN MONEY · Secure Digital Wallet
+    </footer>
+
   </main>
 
   <script type="module" src="js/deposit.js?v=20261125"></script>

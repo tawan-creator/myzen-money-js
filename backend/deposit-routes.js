@@ -1246,6 +1246,609 @@ function createDepositRoutes({
     }
   );
 
+  // ==========================================
+  // INTERNATIONAL TRANSFER - USER SUBMIT
+  // POST /api/international-transfers
+  // ==========================================
+
+  router.post(
+    "/international-transfers",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const body = req.body || {};
+
+        const idempotencyKey = String(
+          body.idempotencyKey || ""
+        ).trim();
+
+        if (
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)
+        ) {
+          return error(res, 400, "Invalid transfer request ID.");
+        }
+
+        const sendAmount = body.sendAmount;
+
+        const recipientBank = String(
+          body.recipientBank || ""
+        ).trim().slice(0, 100);
+
+        const accountNumber = String(
+          body.accountNumber || ""
+        ).trim().slice(0, 100);
+
+        const recipientName = String(
+          body.recipientName || ""
+        ).trim().slice(0, 150);
+
+        const recipientPhone = String(
+          body.recipientPhone || ""
+        ).trim().slice(0, 50);
+
+        const note = String(
+          body.note || ""
+        ).trim().slice(0, 300);
+
+        if (
+          !recipientBank ||
+          !accountNumber ||
+          !recipientName ||
+          !recipientPhone
+        ) {
+          return error(res, 400, "Please complete recipient information.");
+        }
+
+        if (
+          recipientBank.length > 100 ||
+          accountNumber.length > 100 ||
+          recipientName.length > 150 ||
+          recipientPhone.length > 50
+        ) {
+          return error(res, 400, "Recipient information is too long.");
+        }
+
+        const userRef = db
+          .collection("users")
+          .doc(req.user.uid);
+
+        const requestRef = db
+          .collection("internationalTransfers")
+          .doc(idempotencyKey);
+
+        const debitLedgerRef = db
+          .collection("walletLedger")
+          .doc(`international_${idempotencyKey}_DEBIT`);
+
+        const result = await db.runTransaction(async transaction => {
+          // Read all documents before writing.
+          const requestSnap = await transaction.get(requestRef);
+
+          if (requestSnap.exists) {
+            const existing = requestSnap.data();
+
+            if (existing.senderUid !== req.user.uid) {
+              throw new Error("REQUEST_ID_CONFLICT");
+            }
+
+            return {
+              alreadySubmitted: true,
+              requestId: requestRef.id,
+              status: existing.status
+            };
+          }
+
+          const userSnap = await transaction.get(userRef);
+          const ratesSnap = await transaction.get(exchangeRatesRef);
+
+          if (!userSnap.exists) {
+            throw new Error("USER_NOT_FOUND");
+          }
+
+          const user = userSnap.data();
+
+          if (user.status !== "approved") {
+            throw new Error("USER_NOT_APPROVED");
+          }
+
+          const fromCountry = normalizeCountry(user.country);
+          const sendCurrency = currencyFor(fromCountry);
+
+          if (!sendCurrency) {
+            throw new Error("INVALID_COUNTRY");
+          }
+
+          const toCountry = fromCountry === "Thailand"
+            ? "Myanmar"
+            : "Thailand";
+
+          const receiveCurrency = currencyFor(toCountry);
+
+          const sendMinor = toMinor(
+            sendAmount,
+            sendCurrency
+          );
+
+          if (sendMinor === null) {
+            throw new Error("INVALID_AMOUNT");
+          }
+
+          const rates = ratesSnap.exists
+            ? ratesSnap.data()
+            : {};
+
+          const exchangeRate = fromCountry === "Thailand"
+            ? rates.thbToMmk
+            : rates.mmkToThb;
+
+          if (!validRate(exchangeRate)) {
+            throw new Error("RATE_UNAVAILABLE");
+          }
+
+          const rawReceiveAmount = sendAmount * exchangeRate;
+
+          const receiveAmount = receiveCurrency === "MMK"
+            ? Math.round(rawReceiveAmount)
+            : Number(rawReceiveAmount.toFixed(2));
+
+          if (
+            !Number.isFinite(receiveAmount) ||
+            receiveAmount <= 0
+          ) {
+            throw new Error("INVALID_RECEIVE_AMOUNT");
+          }
+
+          const balance = Number(user.balance || 0);
+
+          if (!Number.isFinite(balance) || balance < 0) {
+            throw new Error("INVALID_BALANCE");
+          }
+
+          const balanceBeforeMinor = sendCurrency === "THB"
+            ? Math.round(balance * 100)
+            : balance;
+
+          if (
+            !Number.isSafeInteger(balanceBeforeMinor) ||
+            balanceBeforeMinor < 0 ||
+            (
+              sendCurrency === "THB" &&
+              Math.abs(balance * 100 - balanceBeforeMinor) > 0.000001
+            )
+          ) {
+            throw new Error("INVALID_BALANCE");
+          }
+
+          if (balanceBeforeMinor < sendMinor) {
+            throw new Error("INSUFFICIENT_BALANCE");
+          }
+
+          const balanceAfterMinor =
+            balanceBeforeMinor - sendMinor;
+
+          const balanceBefore = fromMinor(
+            balanceBeforeMinor,
+            sendCurrency
+          );
+
+          const balanceAfter = fromMinor(
+            balanceAfterMinor,
+            sendCurrency
+          );
+
+          const senderName = String(
+            user.name || user.fullName || ""
+          ).trim().slice(0, 150);
+
+          // Debit wallet.
+          transaction.update(userRef, {
+            balance: balanceAfter,
+            updatedAt: FieldValue.serverTimestamp()
+          });
+
+          // Create transfer request.
+          transaction.create(requestRef, {
+            senderUid: req.user.uid,
+            senderName,
+            senderEmail: String(req.user.email || ""),
+            fromCountry,
+            toCountry,
+            sendCurrency,
+            receiveCurrency,
+            sendAmount,
+            receiveAmount,
+            exchangeRate,
+            recipientBank,
+            accountNumber,
+            recipientName,
+            recipientPhone,
+            note,
+            status: "pending",
+            balanceBefore,
+            balanceAfter,
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
+          });
+
+          // Create debit ledger.
+          transaction.create(debitLedgerRef, {
+            ledgerId: `international_${idempotencyKey}_DEBIT`,
+            uid: req.user.uid,
+            direction: "debit",
+            type: "international_transfer",
+            amount: sendAmount,
+            currency: sendCurrency,
+            balanceBefore,
+            balanceAfter,
+            referenceId: idempotencyKey,
+            status: "completed",
+            createdAt: FieldValue.serverTimestamp()
+          });
+
+          return {
+            alreadySubmitted: false,
+            requestId: requestRef.id,
+            status: "pending",
+            sendAmount,
+            sendCurrency,
+            receiveAmount,
+            receiveCurrency,
+            exchangeRate,
+            balanceAfter
+          };
+        });
+
+        return res.status(
+          result.alreadySubmitted ? 200 : 201
+        ).json({
+          success: true,
+          message: result.alreadySubmitted
+            ? "This transfer was already submitted."
+            : "International transfer submitted successfully.",
+          result
+        });
+
+      } catch (err) {
+        console.error("INTERNATIONAL TRANSFER SUBMIT:", err);
+
+        const messages = {
+          REQUEST_ID_CONFLICT: [409, "Transfer request ID conflict."],
+          USER_NOT_FOUND: [404, "Wallet profile not found."],
+          USER_NOT_APPROVED: [403, "Approved wallet required."],
+          INVALID_COUNTRY: [400, "Invalid wallet country."],
+          INVALID_AMOUNT: [400, "Invalid transfer amount."],
+          RATE_UNAVAILABLE: [400, "Exchange rate is unavailable."],
+          INVALID_RECEIVE_AMOUNT: [400, "Invalid receive amount."],
+          INVALID_BALANCE: [400, "Wallet balance is invalid."],
+          INSUFFICIENT_BALANCE: [400, "Insufficient wallet balance."]
+        };
+
+        const result = messages[err.message];
+
+        return result
+          ? error(res, result[0], result[1])
+          : error(res, 500, "Unable to submit international transfer.");
+      }
+    }
+  );
+
+  // ==========================================
+  // ADMIN - INTERNATIONAL TRANSFER LIST
+  // GET /api/admin/international-transfers
+  // ==========================================
+
+  router.get(
+    "/admin/international-transfers",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const snap = await db
+          .collection("internationalTransfers")
+          .limit(100)
+          .get();
+
+        const transfers = snap.docs
+          .map(doc => {
+            const data = doc.data();
+
+            return {
+              id: doc.id,
+              senderUid: data.senderUid,
+              senderName: data.senderName || "",
+              senderEmail: data.senderEmail || "",
+              fromCountry: data.fromCountry,
+              toCountry: data.toCountry,
+              sendCurrency: data.sendCurrency,
+              receiveCurrency: data.receiveCurrency,
+              sendAmount: data.sendAmount,
+              receiveAmount: data.receiveAmount,
+              exchangeRate: data.exchangeRate,
+              recipientBank: data.recipientBank,
+              accountNumber: data.accountNumber,
+              recipientName: data.recipientName,
+              recipientPhone: data.recipientPhone,
+              note: data.note || "",
+              status: data.status,
+              createdAt: data.createdAt?.toDate?.().toISOString() || null
+            };
+          })
+          .sort((a, b) =>
+            String(b.createdAt || "").localeCompare(
+              String(a.createdAt || "")
+            )
+          );
+
+        return res.json({
+          success: true,
+          transfers
+        });
+
+      } catch (err) {
+        console.error("ADMIN INTERNATIONAL TRANSFERS:", err);
+        return error(res, 500, "Unable to load international transfers.");
+      }
+    }
+  );
+
+  // ==========================================
+  // ADMIN - APPROVE INTERNATIONAL TRANSFER
+  // POST /api/admin/international-transfers/:id/approve
+  // ==========================================
+
+  router.post(
+    "/admin/international-transfers/:id/approve",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const id = String(req.params.id || "");
+
+        if (
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+        ) {
+          return error(res, 400, "Invalid transfer ID.");
+        }
+
+        const requestRef = db
+          .collection("internationalTransfers")
+          .doc(id);
+
+        const result = await db.runTransaction(async transaction => {
+          const snap = await transaction.get(requestRef);
+
+          if (!snap.exists) {
+            throw new Error("TRANSFER_NOT_FOUND");
+          }
+
+          const transfer = snap.data();
+
+          if (transfer.status === "approved") {
+            return { alreadyProcessed: true };
+          }
+
+          if (transfer.status !== "pending") {
+            throw new Error("TRANSFER_NOT_PENDING");
+          }
+
+          transaction.update(requestRef, {
+            status: "approved",
+            reviewedBy: req.user.uid,
+            reviewedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
+          });
+
+          return { alreadyProcessed: false };
+        });
+
+        return res.json({
+          success: true,
+          message: result.alreadyProcessed
+            ? "Transfer was already approved."
+            : "Transfer approved. Complete the external bank payout manually.",
+          result
+        });
+
+      } catch (err) {
+        console.error("APPROVE INTERNATIONAL TRANSFER:", err);
+
+        if (err.message === "TRANSFER_NOT_FOUND") {
+          return error(res, 404, "Transfer not found.");
+        }
+
+        if (err.message === "TRANSFER_NOT_PENDING") {
+          return error(res, 409, "Transfer is not pending.");
+        }
+
+        return error(res, 500, "Unable to approve transfer.");
+      }
+    }
+  );
+
+  // ==========================================
+  // ADMIN - REJECT INTERNATIONAL TRANSFER
+  // POST /api/admin/international-transfers/:id/reject
+  // Reject = refund sender wallet exactly once.
+  // ==========================================
+
+  router.post(
+    "/admin/international-transfers/:id/reject",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const id = String(req.params.id || "");
+
+        if (
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+        ) {
+          return error(res, 400, "Invalid transfer ID.");
+        }
+
+        const reason = String(
+          req.body?.reason || "Rejected by administrator"
+        ).trim().slice(0, 300);
+
+        const requestRef = db
+          .collection("internationalTransfers")
+          .doc(id);
+
+        const result = await db.runTransaction(async transaction => {
+          const requestSnap = await transaction.get(requestRef);
+
+          if (!requestSnap.exists) {
+            throw new Error("TRANSFER_NOT_FOUND");
+          }
+
+          const transfer = requestSnap.data();
+
+          if (transfer.status === "rejected") {
+            return { alreadyProcessed: true };
+          }
+
+          if (transfer.status !== "pending") {
+            throw new Error("TRANSFER_NOT_PENDING");
+          }
+
+          const userRef = db
+            .collection("users")
+            .doc(transfer.senderUid);
+
+          const refundLedgerRef = db
+            .collection("walletLedger")
+            .doc(`international_${id}_REFUND`);
+
+          const userSnap = await transaction.get(userRef);
+          const refundLedgerSnap = await transaction.get(refundLedgerRef);
+
+          if (!userSnap.exists) {
+            throw new Error("USER_NOT_FOUND");
+          }
+
+          if (refundLedgerSnap.exists) {
+            throw new Error("REFUND_ALREADY_EXISTS");
+          }
+
+          const user = userSnap.data();
+
+          const currency = transfer.sendCurrency;
+
+          if (
+            !["THB", "MMK"].includes(currency) ||
+            currencyFor(normalizeCountry(user.country)) !== currency
+          ) {
+            throw new Error("CURRENCY_MISMATCH");
+          }
+
+          const amountMinor = toMinor(
+            transfer.sendAmount,
+            currency
+          );
+
+          const currentBalance = Number(user.balance || 0);
+
+          if (
+            amountMinor === null ||
+            !Number.isFinite(currentBalance) ||
+            currentBalance < 0
+          ) {
+            throw new Error("INVALID_BALANCE");
+          }
+
+          const currentMinor = currency === "THB"
+            ? Math.round(currentBalance * 100)
+            : currentBalance;
+
+          if (
+            !Number.isSafeInteger(currentMinor) ||
+            currentMinor < 0 ||
+            (
+              currency === "THB" &&
+              Math.abs(currentBalance * 100 - currentMinor) > 0.000001
+            )
+          ) {
+            throw new Error("INVALID_BALANCE");
+          }
+
+          const newMinor = currentMinor + amountMinor;
+
+          if (!Number.isSafeInteger(newMinor)) {
+            throw new Error("BALANCE_LIMIT");
+          }
+
+          const balanceBefore = fromMinor(currentMinor, currency);
+          const balanceAfter = fromMinor(newMinor, currency);
+
+          // Refund sender.
+          transaction.update(userRef, {
+            balance: balanceAfter,
+            updatedAt: FieldValue.serverTimestamp()
+          });
+
+          // Mark request rejected.
+          transaction.update(requestRef, {
+            status: "rejected",
+            rejectionReason: reason,
+            reviewedBy: req.user.uid,
+            reviewedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+            refundedAmount: transfer.sendAmount,
+            refundedCurrency: currency
+          });
+
+          // Refund ledger.
+          transaction.create(refundLedgerRef, {
+            ledgerId: `international_${id}_REFUND`,
+            uid: transfer.senderUid,
+            direction: "credit",
+            type: "international_transfer_refund",
+            amount: transfer.sendAmount,
+            currency,
+            balanceBefore,
+            balanceAfter,
+            referenceId: id,
+            status: "completed",
+            createdAt: FieldValue.serverTimestamp()
+          });
+
+          return {
+            alreadyProcessed: false,
+            refundedAmount: transfer.sendAmount,
+            currency,
+            balanceAfter
+          };
+        });
+
+        return res.json({
+          success: true,
+          message: result.alreadyProcessed
+            ? "Transfer was already rejected and refunded."
+            : "Transfer rejected and sender wallet refunded.",
+          result
+        });
+
+      } catch (err) {
+        console.error("REJECT INTERNATIONAL TRANSFER:", err);
+
+        const messages = {
+          TRANSFER_NOT_FOUND: [404, "Transfer not found."],
+          TRANSFER_NOT_PENDING: [409, "Transfer is not pending."],
+          USER_NOT_FOUND: [404, "Sender wallet not found."],
+          REFUND_ALREADY_EXISTS: [409, "Refund ledger already exists."],
+          CURRENCY_MISMATCH: [400, "Transfer currency mismatch."],
+          INVALID_BALANCE: [400, "Wallet balance is invalid."],
+          BALANCE_LIMIT: [400, "Wallet balance limit exceeded."]
+        };
+
+        const result = messages[err.message];
+
+        return result
+          ? error(res, result[0], result[1])
+          : error(res, 500, "Unable to reject international transfer.");
+      }
+    }
+  );
+
   return router;
 }
 

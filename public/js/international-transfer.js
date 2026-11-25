@@ -8,14 +8,15 @@ import {
 import {
   doc,
   getDoc,
-  addDoc,
   collection,
   query,
   where,
   orderBy,
-  onSnapshot,
-  serverTimestamp
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const API_BASE_URL = "https://myzen-money-js.onrender.com";
+const RATE_REFRESH_INTERVAL = 30000;
 
 const $ = (id) => document.getElementById(id);
 
@@ -43,10 +44,17 @@ const historyElement = $("history");
 
 let currentUser = null;
 let currentProfile = null;
+
 let sendingCurrency = "";
 let receivingCurrency = "";
 let exchangeRate = 0;
+
 let historyUnsubscribe = null;
+let rateRefreshTimer = null;
+let transferRouteReady = false;
+
+// Keep the same key when retrying a failed request.
+let pendingTransferIdempotencyKey = null;
 
 function showMessage(text, color = "#dc2626") {
   message.textContent = text;
@@ -54,46 +62,181 @@ function showMessage(text, color = "#dc2626") {
 }
 
 function formatMoney(amount, currency) {
+  const maximumFractionDigits = currency === "MMK" ? 0 : 2;
+  const minimumFractionDigits = currency === "MMK" ? 0 : 2;
+
   return Number(amount || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits,
+    maximumFractionDigits
   }) + " " + currency;
+}
+
+function formatRate(rate) {
+  return Number(rate).toLocaleString("en-US", {
+    maximumFractionDigits: 6
+  });
+}
+
+function calculateReceiveAmount() {
+  const amount = Number(amountInput.value);
+
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0 ||
+    !Number.isFinite(exchangeRate) ||
+    exchangeRate <= 0
+  ) {
+    receiveAmountInput.value = "";
+    return;
+  }
+
+  const rawAmount = amount * exchangeRate;
+
+  const result = receivingCurrency === "MMK"
+    ? Math.round(rawAmount)
+    : Number(rawAmount.toFixed(2));
+
+  receiveAmountInput.value = formatMoney(
+    result,
+    receivingCurrency
+  );
+}
+
+function updateExchangeRateDisplay() {
+  if (!exchangeRate || !sendingCurrency || !receivingCurrency) {
+    exchangeRateText.textContent =
+      "Exchange rate unavailable. Please try again later.";
+
+    receiveAmountInput.value = "";
+    submitButton.disabled = true;
+    submitButton.textContent = "Exchange Rate Unavailable";
+    return;
+  }
+
+  exchangeRateText.textContent =
+    "1 " + sendingCurrency + " = " +
+    formatRate(exchangeRate) + " " + receivingCurrency;
+
+  calculateReceiveAmount();
+
+  submitButton.disabled = false;
+  submitButton.textContent = "Submit Transfer Request";
 }
 
 function setupExchangeRate(from, to) {
   if (from === "Thailand" && to === "Myanmar") {
     sendingCurrency = "THB";
     receivingCurrency = "MMK";
-    exchangeRate = 152;
   } else if (from === "Myanmar" && to === "Thailand") {
     sendingCurrency = "MMK";
     receivingCurrency = "THB";
-    exchangeRate = 1 / 150;
   } else {
     throw new Error("Unsupported transfer route.");
   }
 
+  exchangeRate = 0;
+
   currencyInput.value = sendingCurrency;
 
-  exchangeRateText.textContent =
-    "1 " + sendingCurrency + " = " +
-    exchangeRate.toLocaleString("en-US", {
-      maximumFractionDigits: 6
-    }) + " " + receivingCurrency;
+  exchangeRateText.textContent = "Loading Admin exchange rate...";
+  receiveAmountInput.value = "";
+
+  submitButton.disabled = true;
 }
 
-function calculateReceiveAmount() {
-  const amount = Number(amountInput.value);
-
-  if (!Number.isFinite(amount) || amount <= 0 || !exchangeRate) {
-    receiveAmountInput.value = "";
-    return;
+async function loadAdminExchangeRate() {
+  if (!currentUser || !sendingCurrency || !receivingCurrency) {
+    return false;
   }
 
-  receiveAmountInput.value = formatMoney(
-    amount * exchangeRate,
-    receivingCurrency
-  );
+  try {
+    const token = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/exchange-rates`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        cache: "no-store"
+      }
+    );
+
+    let data;
+
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("Invalid exchange rate server response.");
+    }
+
+    if (!response.ok || data.success === false) {
+      throw new Error(
+        data.message || "Unable to load exchange rates."
+      );
+    }
+
+    const rates =
+      data.rates ||
+      data.exchangeRates ||
+      data.settings ||
+      data;
+
+    const selectedRate =
+      sendingCurrency === "THB"
+        ? Number(rates.thbToMmk)
+        : Number(rates.mmkToThb);
+
+    if (
+      !Number.isFinite(selectedRate) ||
+      selectedRate <= 0
+    ) {
+      exchangeRate = 0;
+      updateExchangeRateDisplay();
+
+      showMessage(
+        "The Admin has not configured this exchange rate yet."
+      );
+
+      return false;
+    }
+
+    exchangeRate = selectedRate;
+
+    updateExchangeRateDisplay();
+
+    return true;
+
+  } catch (error) {
+    console.error("Exchange rate loading error:", error);
+
+    exchangeRate = 0;
+    updateExchangeRateDisplay();
+
+    showMessage(
+      "Unable to load exchange rate: " + error.message
+    );
+
+    return false;
+  }
+}
+
+function startExchangeRateRefresh() {
+  stopExchangeRateRefresh();
+
+  rateRefreshTimer = setInterval(() => {
+    if (document.visibilityState === "visible") {
+      loadAdminExchangeRate();
+    }
+  }, RATE_REFRESH_INTERVAL);
+}
+
+function stopExchangeRateRefresh() {
+  if (rateRefreshTimer) {
+    clearInterval(rateRefreshTimer);
+    rateRefreshTimer = null;
+  }
 }
 
 amountInput.addEventListener("input", calculateReceiveAmount);
@@ -187,16 +330,27 @@ function loadTransferHistory(uid) {
 
         status.textContent = "Status: " + statusValue.toUpperCase();
 
-        if (["pending", "approved", "completed", "rejected"].includes(statusValue)) {
+        if (
+          ["pending", "approved", "completed", "rejected"].includes(statusValue)
+        ) {
           status.className = statusValue;
         }
 
-        wrapper.append(route, amount, received, bank, reference, status);
+        wrapper.append(
+          route,
+          amount,
+          received,
+          bank,
+          reference,
+          status
+        );
+
         historyElement.appendChild(wrapper);
       });
     },
     (error) => {
       console.error("Transfer history error:", error);
+
       historyElement.textContent =
         "Unable to load transfer history: " + error.message;
     }
@@ -212,6 +366,10 @@ onAuthStateChanged(auth, async (user) => {
     historyUnsubscribe = null;
   }
 
+  stopExchangeRateRefresh();
+
+  pendingTransferIdempotencyKey = null;
+
   if (!user) {
     location.replace("login.html");
     return;
@@ -219,6 +377,7 @@ onAuthStateChanged(auth, async (user) => {
 
   currentUser = user;
   currentProfile = null;
+  transferRouteReady = false;
 
   accountInfo.textContent = "Loading account...";
   routeText.textContent = "Loading transfer route...";
@@ -231,6 +390,7 @@ onAuthStateChanged(auth, async (user) => {
     if (!profileSnapshot.exists()) {
       accountInfo.textContent = "User profile not found.";
       routeText.textContent = "Transfer route unavailable.";
+
       submitButton.disabled = true;
       submitButton.textContent = "Account Not Found";
       return;
@@ -238,25 +398,31 @@ onAuthStateChanged(auth, async (user) => {
 
     currentProfile = profileSnapshot.data();
 
-    const status = String(currentProfile.status || "").toLowerCase();
+    const status = String(
+      currentProfile.status || ""
+    ).toLowerCase();
 
     if (status !== "approved") {
       accountInfo.textContent =
         "Your account is waiting for Admin approval.";
 
       routeText.textContent = "Transfer is not available.";
+
       submitButton.disabled = true;
       submitButton.textContent = "Account Not Approved";
       return;
     }
 
-    const country = String(currentProfile.country || "").trim();
+    const country = String(
+      currentProfile.country || ""
+    ).trim();
 
     if (!["Thailand", "Myanmar"].includes(country)) {
       accountInfo.textContent =
         "Your registered country must be Thailand or Myanmar.";
 
       routeText.textContent = "Unsupported transfer route.";
+
       submitButton.disabled = true;
       submitButton.textContent = "Unsupported Country";
       return;
@@ -277,11 +443,15 @@ onAuthStateChanged(auth, async (user) => {
       " | Account: APPROVED";
 
     setupExchangeRate(country, receivingCountry);
+
     loadBanks(receivingCountry);
     loadTransferHistory(user.uid);
 
-    submitButton.disabled = false;
-    submitButton.textContent = "Submit Transfer Request";
+    transferRouteReady = true;
+
+    await loadAdminExchangeRate();
+
+    startExchangeRateRefresh();
 
   } catch (error) {
     console.error("Transfer account error:", error);
@@ -290,6 +460,7 @@ onAuthStateChanged(auth, async (user) => {
       "Unable to load account: " + error.message;
 
     routeText.textContent = "Transfer route unavailable.";
+
     submitButton.disabled = true;
     submitButton.textContent = "Unable to Load Account";
   }
@@ -303,7 +474,14 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (String(currentProfile.status || "").toLowerCase() !== "approved") {
+  if (!transferRouteReady) {
+    showMessage("Transfer route is not ready.");
+    return;
+  }
+
+  if (
+    String(currentProfile.status || "").toLowerCase() !== "approved"
+  ) {
     showMessage("Your account is not approved.");
     return;
   }
@@ -323,55 +501,112 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (!recipientBank || !accountNumber || !recipientName || !recipientPhone) {
+  if (
+    sendingCurrency === "THB" &&
+    Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001
+  ) {
+    showMessage("THB amount can only have up to 2 decimal places.");
+    return;
+  }
+
+  if (
+    sendingCurrency === "MMK" &&
+    !Number.isSafeInteger(amount)
+  ) {
+    showMessage("MMK amount must be a whole number.");
+    return;
+  }
+
+  if (
+    !recipientBank ||
+    !accountNumber ||
+    !recipientName ||
+    !recipientPhone
+  ) {
     showMessage("Please complete all required recipient details.");
     return;
   }
 
-  if (!exchangeRate || fromCountry === toCountry) {
-    showMessage("Invalid transfer route.");
+  if (
+    !Number.isFinite(exchangeRate) ||
+    exchangeRate <= 0 ||
+    fromCountry === toCountry
+  ) {
+    showMessage("Exchange rate is unavailable. Please try again.");
+    await loadAdminExchangeRate();
     return;
   }
 
-  const receiveAmount = Number((amount * exchangeRate).toFixed(2));
-
   submitButton.disabled = true;
-  submitButton.textContent = "Submitting...";
+  submitButton.textContent = "Checking Latest Rate...";
 
   try {
-    const request = {
-      type: "international",
-      senderUid: currentUser.uid,
-      senderEmail: currentUser.email || "",
-      senderName: currentProfile.name || "",
+    // Refresh the rate before submitting.
+    const rateLoaded = await loadAdminExchangeRate();
 
-      fromCountry,
-      toCountry,
+    if (!rateLoaded || exchangeRate <= 0) {
+      throw new Error(
+        "Exchange rate is unavailable. Please try again later."
+      );
+    }
 
-      sendCurrency: sendingCurrency,
-      receiveCurrency: receivingCurrency,
+    // Create one stable ID for this submission.
+    // If the network fails, the same ID is reused on retry.
+    if (!pendingTransferIdempotencyKey) {
+      if (!globalThis.crypto?.randomUUID) {
+        throw new Error(
+          "Secure request ID generation is not supported by this browser."
+        );
+      }
 
-      sendAmount: amount,
-      receiveAmount,
-      exchangeRate,
+      pendingTransferIdempotencyKey =
+        globalThis.crypto.randomUUID();
+    }
 
-      recipientBank,
-      accountNumber,
-      recipientName,
-      recipientPhone,
+    const token = await currentUser.getIdToken(true);
 
-      note,
-      status: "pending",
-      createdAt: serverTimestamp()
-    };
-
-    const result = await addDoc(
-      collection(db, "internationalTransfers"),
-      request
+    const response = await fetch(
+      `${API_BASE_URL}/api/international-transfers`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          idempotencyKey: pendingTransferIdempotencyKey,
+          sendAmount: amount,
+          recipientBank,
+          accountNumber,
+          recipientName,
+          recipientPhone,
+          note
+        })
+      }
     );
 
+    let data;
+
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("Invalid transfer server response.");
+    }
+
+    if (!response.ok || data.success !== true) {
+      throw new Error(
+        data.message || "Unable to submit transfer."
+      );
+    }
+
+    const result = data.result || {};
+
+    // Clear the key only after the server confirms success.
+    pendingTransferIdempotencyKey = null;
+
     showMessage(
-      "Transfer request submitted successfully. Reference: " + result.id,
+      "Transfer request submitted successfully. Reference: " +
+      (result.requestId || "Submitted"),
       "#15803d"
     );
 
@@ -380,14 +615,35 @@ form.addEventListener("submit", async (event) => {
     senderCountryInput.value = fromCountry;
     receiverCountryInput.value = toCountry;
     currencyInput.value = sendingCurrency;
+
     receiveAmountInput.value = "";
+
+    calculateReceiveAmount();
+
+    // Refresh the profile so the latest wallet balance is available.
+    const updatedProfile = await getDoc(
+      doc(db, "users", currentUser.uid)
+    );
+
+    if (updatedProfile.exists()) {
+      currentProfile = updatedProfile.data();
+    }
 
   } catch (error) {
     console.error("Transfer submission error:", error);
-    showMessage("Unable to submit transfer: " + error.message);
+
+    showMessage(
+      "Unable to submit transfer: " + error.message
+    );
+
   } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Submit Transfer Request";
+    if (exchangeRate > 0 && transferRouteReady) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Submit Transfer Request";
+    } else {
+      submitButton.disabled = true;
+      submitButton.textContent = "Exchange Rate Unavailable";
+    }
   }
 });
 
@@ -395,4 +651,6 @@ window.addEventListener("beforeunload", () => {
   if (historyUnsubscribe) {
     historyUnsubscribe();
   }
+
+  stopExchangeRateRefresh();
 });

@@ -2,42 +2,325 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MYZEN MONEY - Approval Pending</title>
-  <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080f1d">
+<meta name="description" content="MYZEN MONEY Account Approval">
+<title>MYZEN MONEY | Approval Pending</title>
+
+<style>
+:root {
+  --bg:#080f1d;
+  --panel:#111c30;
+  --gold:#e8c477;
+  --gold2:#f8dfa0;
+  --text:#f5f7fb;
+  --muted:#94a3b8;
+  --border:rgba(232,196,119,.18);
+}
+
+* {
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body {
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  font-family:Inter,Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 50% 10%,rgba(232,196,119,.13),transparent 35%),
+    radial-gradient(circle at 0% 100%,rgba(31,75,125,.18),transparent 40%),
+    var(--bg);
+}
+
+.container {
+  width:100%;
+  max-width:460px;
+}
+
+.card {
+  position:relative;
+  overflow:hidden;
+  padding:38px 30px 30px;
+  text-align:center;
+  background:linear-gradient(145deg,#142139,#0d1729 75%);
+  border:1px solid var(--border);
+  border-radius:26px;
+  box-shadow:0 25px 80px rgba(0,0,0,.45);
+}
+
+.card::before {
+  content:"";
+  position:absolute;
+  top:0;
+  left:10%;
+  width:80%;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+
+.brand {
+  font-size:25px;
+  font-weight:900;
+  letter-spacing:2px;
+  color:var(--gold2);
+}
+
+.brand-sub {
+  margin-top:7px;
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:3px;
+}
+
+.icon-wrap {
+  width:112px;
+  height:112px;
+  margin:34px auto 25px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:rgba(232,196,119,.08);
+  border:1px solid rgba(232,196,119,.28);
+  box-shadow:0 0 45px rgba(232,196,119,.09);
+  animation:glow 2.5s ease-in-out infinite;
+}
+
+.clock {
+  width:55px;
+  height:55px;
+  border:3px solid var(--gold);
+  border-radius:50%;
+  position:relative;
+}
+
+.clock::before {
+  content:"";
+  position:absolute;
+  width:3px;
+  height:17px;
+  background:var(--gold2);
+  left:24px;
+  top:9px;
+  border-radius:5px;
+}
+
+.clock::after {
+  content:"";
+  position:absolute;
+  width:14px;
+  height:3px;
+  background:var(--gold2);
+  left:24px;
+  top:25px;
+  border-radius:5px;
+  transform:rotate(25deg);
+  transform-origin:left center;
+}
+
+@keyframes glow {
+  0%,100% { transform:scale(1); box-shadow:0 0 25px rgba(232,196,119,.08); }
+  50% { transform:scale(1.045); box-shadow:0 0 45px rgba(232,196,119,.2); }
+}
+
+h1 {
+  font-size:25px;
+  margin-bottom:12px;
+}
+
+.description {
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.8;
+  max-width:330px;
+  margin:0 auto;
+}
+
+.status {
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  margin:25px 0 20px;
+  padding:11px 19px;
+  border-radius:30px;
+  color:var(--gold2);
+  background:rgba(232,196,119,.1);
+  border:1px solid rgba(232,196,119,.3);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:1.5px;
+}
+
+.status-dot {
+  width:8px;
+  height:8px;
+  background:var(--gold);
+  border-radius:50%;
+  box-shadow:0 0 10px var(--gold);
+  animation:pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  50% { opacity:.35; }
+}
+
+.info-box {
+  padding:17px;
+  margin:4px 0 24px;
+  text-align:left;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:15px;
+}
+
+.info-title {
+  color:var(--gold2);
+  font-size:12px;
+  font-weight:700;
+  margin-bottom:7px;
+}
+
+.info-text {
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.7;
+}
+
+button {
+  width:100%;
+  min-height:49px;
+  border:0;
+  border-radius:12px;
+  font-size:13px;
+  font-weight:800;
+  cursor:pointer;
+  transition:.2s;
+}
+
+button:disabled {
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+.primary-btn {
+  color:#172033;
+  background:linear-gradient(135deg,#f8dfa0,#d8ad55);
+  box-shadow:0 8px 25px rgba(216,173,85,.16);
+}
+
+.primary-btn:hover:not(:disabled) {
+  transform:translateY(-2px);
+  box-shadow:0 12px 30px rgba(216,173,85,.25);
+}
+
+.logout-btn {
+  margin-top:12px;
+  color:#fca5a5;
+  background:rgba(239,68,68,.08);
+  border:1px solid rgba(239,68,68,.2);
+}
+
+.logout-btn:hover:not(:disabled) {
+  background:rgba(239,68,68,.15);
+}
+
+.message {
+  min-height:22px;
+  margin-top:16px;
+  font-size:12px;
+  line-height:1.6;
+  color:var(--gold2);
+  overflow-wrap:anywhere;
+}
+
+.footer {
+  margin-top:28px;
+  padding-top:20px;
+  border-top:1px solid rgba(255,255,255,.07);
+  color:#64748b;
+  font-size:10px;
+  letter-spacing:1px;
+}
+
+.spinner {
+  display:inline-block;
+  width:15px;
+  height:15px;
+  margin-right:8px;
+  vertical-align:middle;
+  border:2px solid rgba(23,32,51,.25);
+  border-top-color:#172033;
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform:rotate(360deg); }
+}
+
+@media(max-width:480px) {
+  body { padding:16px; }
+  .card { padding:32px 22px 25px; }
+  .brand { font-size:22px; }
+  h1 { font-size:23px; }
+}
+</style>
 </head>
+
 <body>
+<div class="container">
+  <main class="card">
 
-<div class="auth-container">
-  <div class="auth-card">
-    <h1>MYZEN MONEY</h1>
+    <div class="brand">MYZEN MONEY</div>
+    <div class="brand-sub">SECURE DIGITAL WALLET</div>
 
-    <h2 style="text-align:center">Approval Pending</h2>
+    <div class="icon-wrap">
+      <div class="clock"></div>
+    </div>
 
-    <p>
+    <h1>Approval Pending</h1>
+
+    <p class="description">
       Your registration was successful.
-      Your account is waiting for Admin approval.
+      Your account is currently waiting for
+      Admin verification.
     </p>
 
-    <p class="status-pending" style="text-align:center">
+    <div class="status">
+      <span class="status-dot"></span>
       PENDING REVIEW
-    </p>
+    </div>
 
-    <p class="text-muted">
-      Please check again later after the Admin approves your account.
-    </p>
+    <div class="info-box">
+      <div class="info-title">What happens next?</div>
+      <p class="info-text">
+        Our Admin team is reviewing your account.
+        Once your account is approved, you can access
+        your MYZEN MONEY wallet and its features.
+      </p>
+    </div>
 
-    <button id="checkApproval" class="btn btn-block">
-      Check Approval Status
+    <button id="checkApproval" class="primary-btn" disabled>
+      Checking Account...
     </button>
 
-    <button id="pendingLogout" class="btn btn-danger btn-block">
+    <button id="pendingLogout" class="logout-btn">
       Logout
     </button>
 
-    <p id="pendingMessage"></p>
-  </div>
+    <p id="pendingMessage" class="message"></p>
+
+    <div class="footer">
+      MYZEN MONEY · YOUR MONEY, YOUR CONTROL
+    </div>
+
+  </main>
 </div>
 
 <script type="module">
@@ -54,6 +337,11 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 let currentUser = null;
+let checking = false;
+
+const checkButton = document.getElementById("checkApproval");
+const logoutButton = document.getElementById("pendingLogout");
+const message = document.getElementById("pendingMessage");
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -62,12 +350,19 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   currentUser = user;
+  checkButton.disabled = false;
+  checkButton.textContent = "Check Approval Status";
 });
 
-document.getElementById("checkApproval").onclick = async () => {
-  if (!currentUser) return;
+checkButton.onclick = async () => {
+  if (!currentUser || checking) return;
 
-  const message = document.getElementById("pendingMessage");
+  checking = true;
+  checkButton.disabled = true;
+  checkButton.innerHTML =
+    '<span class="spinner"></span>Checking Status...';
+
+  message.textContent = "";
 
   try {
     const snapshot = await getDoc(
@@ -82,21 +377,39 @@ document.getElementById("checkApproval").onclick = async () => {
     const profile = snapshot.data();
 
     if (profile.status === "approved") {
+      message.textContent = "Account approved! Redirecting...";
       window.location.href = "dashboard.html";
-    } else {
-      message.textContent = "Your account is still pending.";
+      return;
     }
 
+    message.textContent =
+      "Your account is still pending Admin approval.";
+
   } catch (error) {
-    message.textContent = error.message;
+    console.error("APPROVAL CHECK:", error);
+    message.textContent =
+      "Unable to check approval status. Please try again.";
+  } finally {
+    checking = false;
+    checkButton.disabled = !currentUser;
+    checkButton.textContent = "Check Approval Status";
   }
 };
 
-document.getElementById("pendingLogout").onclick = async () => {
-  await signOut(auth);
-  window.location.href = "login.html";
+logoutButton.onclick = async () => {
+  logoutButton.disabled = true;
+  logoutButton.textContent = "Logging out...";
+
+  try {
+    await signOut(auth);
+    window.location.href = "login.html";
+  } catch (error) {
+    console.error("LOGOUT ERROR:", error);
+    message.textContent = "Unable to logout. Please try again.";
+    logoutButton.disabled = false;
+    logoutButton.textContent = "Logout";
+  }
 };
 </script>
-
 </body>
 </html>
