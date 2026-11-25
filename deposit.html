@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MYZEN MONEY - Deposit</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">MYZEN MONEY</div>
+  <div class="action-row">
+    <a href="profile.html" class="btn btn-secondary">Profile</a>
+    <button class="btn btn-danger" id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<main class="container">
+  <h2 class="page-title">Deposit Money</h2>
+
+  <section class="balance-card">
+    <div class="balance-label">YOUR WALLET BALANCE</div>
+    <div class="balance-amount" id="currentBalance">Loading...</div>
+    <div class="balance-label" id="accountCurrency">Loading currency...</div>
+  </section>
+
+  <section class="card">
+    <div class="card-title">Submit Deposit Request</div>
+
+    <form id="depositForm">
+
+      <label for="depositAmount">Deposit Amount</label>
+      <input
+        type="number"
+        id="depositAmount"
+        min="1"
+        step="0.01"
+        placeholder="Enter amount"
+        required
+      >
+
+      <label for="paymentMethod">Payment Method</label>
+      <select id="paymentMethod" required>
+        <option value="">Loading payment methods...</option>
+      </select>
+
+      <label for="transactionId">Transaction ID / Reference</label>
+      <input
+        type="text"
+        id="transactionId"
+        maxlength="100"
+        placeholder="Enter your payment reference"
+        required
+      >
+
+      <label for="depositNote">Note (Optional)</label>
+      <textarea
+        id="depositNote"
+        rows="3"
+        maxlength="500"
+        placeholder="Additional information"
+      ></textarea>
+
+      <p class="text-muted">
+        ငွေလွှဲပြီးမှ Transaction ID ကို ဖြည့်ကာ Deposit Request တင်ပါ။
+        Admin အတည်ပြုပြီးမှ Wallet Balance တိုးပါမယ်။
+      </p>
+
+      <button type="submit" class="btn btn-primary" id="depositBtn">
+        Submit Deposit
+      </button>
+
+    </form>
+
+    <div id="depositMessage" class="text-muted"></div>
+  </section>
+
+  <section class="card" style="margin-top:20px">
+    <div class="card-title">My Deposit Requests</div>
+    <div id="depositHistory">
+      <p class="text-muted">Loading requests...</p>
+    </div>
+  </section>
+
+  <a href="dashboard.html" class="btn btn-secondary"
+     style="display:inline-block;margin-top:20px">
+    ← Back to Dashboard
+  </a>
+</main>
+
+<nav class="bottom-nav">
+  <a href="dashboard.html">⌂<br>Home</a>
+  <a href="send-money.html">↗<br>Send</a>
+  <a href="deposit.html">＋<br>Deposit</a>
+  <a href="history.html">◷<br>History</a>
+  <a href="profile.html">♙<br>Profile</a>
+</nav>
+
+<script type="module" src="js/deposit.js?v=20261123"></script>
+</body>
+</html>

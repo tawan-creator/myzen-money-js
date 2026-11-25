@@ -1,0 +1,262 @@
+
+:root {
+  --primary: #1455d9;
+  --primary-dark: #102c52;
+  --background: #f1f5fa;
+  --white: #ffffff;
+  --text: #172033;
+  --muted: #64748b;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --border: #e2e8f0;
+  --radius: 15px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--background);
+  color: var(--text);
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.topbar {
+  height: 68px;
+  padding: 0 22px;
+  background: var(--primary-dark);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+
+.container {
+  width: min(100% - 30px, 920px);
+  margin: 30px auto;
+}
+
+.page-title {
+  font-size: 23px;
+  margin: 0 0 20px;
+}
+
+.balance-card {
+  padding: 28px;
+  border-radius: 18px;
+  color: white;
+  background: linear-gradient(120deg, #102c52, #2468b7);
+  margin-bottom: 22px;
+}
+
+.balance-label {
+  font-size: 14px;
+  opacity: .9;
+}
+
+.balance-amount {
+  font-size: 34px;
+  font-weight: 800;
+  margin: 12px 0;
+}
+
+.card {
+  background: white;
+  padding: 22px;
+  border-radius: var(--radius);
+  margin-bottom: 18px;
+  box-shadow: 0 3px 14px rgba(15, 40, 80, .04);
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 13px;
+}
+
+.menu-item {
+  background: white;
+  padding: 22px 10px;
+  text-align: center;
+  border-radius: 13px;
+  color: var(--primary);
+  font-weight: 700;
+  border: 1px solid var(--border);
+  transition: .2s;
+}
+
+.menu-item:hover {
+  background: #eaf2ff;
+  transform: translateY(-2px);
+}
+
+.menu-icon {
+  font-size: 25px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.action-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-block;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+}
+
+.btn-secondary {
+  background: #eaf2ff;
+  color: var(--primary);
+}
+
+.btn-danger {
+  background: #e94435;
+  color: white;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: white;
+  margin: 7px 0 16px;
+  outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(20,85,217,.1);
+}
+
+label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: white;
+  border-radius: 18px;
+  padding: 32px;
+  box-shadow: 0 10px 35px rgba(0,0,0,.07);
+}
+
+.auth-card h1 {
+  text-align: center;
+  color: var(--primary);
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.status-pending {
+  color: #b7791f;
+  background: #fff8e1;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.status-approved {
+  color: #15803d;
+  background: #dcfce7;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.transaction-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+
+.bottom-nav {
+  display: none;
+}
+
+@media(max-width: 650px) {
+  .container {
+    margin: 20px auto 90px;
+  }
+
+  .menu-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .balance-amount {
+    font-size: 29px;
+  }
+
+  .auth-card {
+    padding: 23px;
+  }
+
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+    justify-content: space-around;
+    padding: 13px 5px;
+    border-top: 1px solid var(--border);
+  }
+
+  .bottom-nav a {
+    font-size: 12px;
+    text-align: center;
+  }
+}

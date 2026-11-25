@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MYZEN MONEY - Register</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <h1>MYZEN MONEY</h1>
+    <p>Create Your Wallet Account</p>
+
+    <form id="registerForm">
+
+      <label for="country">Select Your Country</label>
+      <select id="country" required>
+        <option value="">Choose Country</option>
+        <option value="Thailand">🇹🇭 Thailand</option>
+        <option value="Myanmar">🇲🇲 Myanmar</option>
+      </select>
+
+      <label for="name">Full Name</label>
+      <input id="name" type="text"
+        placeholder="Enter full name" required minlength="2">
+
+      <label for="nrc">NRC Number (Demo Only)</label>
+      <input id="nrc" type="text"
+        placeholder="Enter demo NRC number" required>
+
+      <label for="phone">Phone Number</label>
+      <input id="phone" type="tel"
+        placeholder="Enter phone number" required>
+
+      <label for="email">Email Address</label>
+      <input id="email" type="email"
+        placeholder="Enter email address" required>
+
+      <label for="password">Password</label>
+      <input id="password" type="password"
+        placeholder="Minimum 6 characters" required minlength="6">
+
+      <label for="confirmPassword">Confirm Password</label>
+      <input id="confirmPassword" type="password"
+        placeholder="Confirm password" required minlength="6">
+
+      <button type="submit" id="registerBtn" class="btn btn-block">
+        Create Account
+      </button>
+    </form>
+
+    <p id="registerMessage" role="status"></p>
+
+    <p>
+      Already have an account?
+      <a href="login.html">Login Here</a>
+    </p>
+
+    <p class="text-muted">
+      Demo only. Do not enter your real identity number.
+    </p>
+  </div>
+</div>
+
+<script type="module" src="js/auth.js"></script>
+</body>
+</html>

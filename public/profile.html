@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MYZEN MONEY - Profile</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f1f5fb;
+      font-family: Arial, sans-serif;
+      color: #172033;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+    }
+
+    .card {
+      background: white;
+      padding: 24px;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0,0,0,.06);
+    }
+
+    h2 { margin-top: 0; }
+
+    .profile-row {
+      padding: 14px 0;
+      border-bottom: 1px solid #e8edf5;
+    }
+
+    .profile-label {
+      color: #667085;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .profile-value {
+      font-size: 16px;
+      font-weight: bold;
+      overflow-wrap: anywhere;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 18px;
+      border: 0;
+      border-radius: 9px;
+      background: #155eef;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .message {
+      margin-top: 15px;
+      color: #b42318;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <section class="card">
+      <h2>MYZEN MONEY</h2>
+      <h3>My Profile</h3>
+
+      <div class="profile-row">
+        <div class="profile-label">Full Name</div>
+        <div class="profile-value" id="profileName">Loading...</div>
+      </div>
+
+      <div class="profile-row">
+        <div class="profile-label">Email</div>
+        <div class="profile-value" id="profileEmail">-</div>
+      </div>
+
+      <div class="profile-row">
+        <div class="profile-label">Phone</div>
+        <div class="profile-value" id="profilePhone">-</div>
+      </div>
+
+      <div class="profile-row">
+        <div class="profile-label">Country</div>
+        <div class="profile-value" id="profileCountry">-</div>
+      </div>
+
+      <div class="profile-row">
+        <div class="profile-label">Currency</div>
+        <div class="profile-value" id="profileCurrency">-</div>
+      </div>
+
+      <div class="profile-row">
+        <div class="profile-label">Balance</div>
+        <div class="profile-value" id="profileBalance">-</div>
+      </div>
+
+      <div class="profile-row">
+        <div class="profile-label">Account Status</div>
+        <div class="profile-value" id="profileStatus">-</div>
+      </div>
+
+      <div class="profile-row">
+        <div class="profile-label">NRC / ID</div>
+        <div class="profile-value" id="profileNrc">-</div>
+      </div>
+
+      <div id="profileMessage" class="message"></div>
+
+      <button type="button" id="depositPageBtn">
+        Go to Deposit
+      </button>
+
+      <button type="button" id="dashboardBtn">
+        Back to Dashboard
+      </button>
+    </section>
+  </main>
+
+  <script type="module" src="js/profile.js?v=20261124"></script>
+</body>
+</html>

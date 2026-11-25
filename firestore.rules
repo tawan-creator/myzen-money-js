@@ -1,0 +1,210 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email == "tharwaiphyol@gmail.com";
+    }
+
+    function userProfile(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function approvedUser(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid))
+        && userProfile(uid).data.status == "approved"
+        && userProfile(uid).data.country in ["Thailand", "Myanmar"];
+    }
+
+    // USER PROFILES
+    match /users/{userId} {
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == "pending"
+        && request.resource.data.balance == 0;
+
+      allow read: if signedIn()
+        && (request.auth.uid == userId || isAdmin());
+
+      allow update, delete: if isAdmin();
+    }
+
+    // PRIVATE RECEIVE CODE MAPPING
+    match /walletReceiveCodes/{uid} {
+      allow get: if signedIn()
+        && request.auth.uid == uid;
+
+      allow list: if false;
+
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && approvedUser(uid)
+        && request.resource.data.keys().hasOnly([
+          "uid", "code", "createdAt"
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.code is string
+        && request.resource.data.code.matches("^[0-9]{6}$")
+        && !exists(
+          /databases/$(database)/documents/receiveCodes/$(request.resource.data.code)
+        );
+
+      allow update, delete: if false;
+    }
+
+    // PUBLIC RECEIVE CODE LOOKUP
+    match /receiveCodes/{code} {
+      allow get: if signedIn()
+        && approvedUser(request.auth.uid);
+
+      allow list: if false;
+
+      allow create: if signedIn()
+        && approvedUser(request.auth.uid)
+        && code.matches("^[0-9]{6}$")
+        && request.resource.data.keys().hasOnly([
+          "uid", "name", "country", "createdAt"
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.country
+          == userProfile(request.auth.uid).data.country
+        && getAfter(
+          /databases/$(database)/documents/walletReceiveCodes/$(request.auth.uid)
+        ).data.code == code;
+
+      allow update, delete: if false;
+    }
+
+    // DEPOSIT REQUESTS
+    match /depositRequests/{requestId} {
+      allow create: if signedIn()
+        && approvedUser(request.auth.uid)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.status == "pending";
+
+      allow read: if signedIn()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+
+      allow update, delete: if isAdmin();
+    }
+
+    // RECEIVE REQUESTS
+    match /receiveRequests/{requestId} {
+      allow create: if signedIn()
+        && approvedUser(request.auth.uid)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.status == "pending"
+        && request.resource.data.country
+          == userProfile(request.auth.uid).data.country
+        && request.resource.data.currency in ["THB", "MMK"]
+        && request.resource.data.bank is string
+        && request.resource.data.senderName is string
+        && request.resource.data.reference is string;
+
+      allow read: if signedIn()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+
+      allow update, delete: if isAdmin();
+    }
+
+    // PAYMENT REQUESTS
+    match /paymentRequests/{requestId} {
+      allow create: if signedIn()
+        && approvedUser(request.auth.uid)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.type in ["deposit", "transfer"]
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.status == "pending";
+
+      allow read: if signedIn()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+
+      allow update, delete: if isAdmin();
+    }
+
+    // TRANSFER REQUESTS
+    match /transferRequests/{requestId} {
+      allow create: if signedIn()
+        && approvedUser(request.auth.uid)
+        && request.resource.data.senderUid == request.auth.uid
+        && request.resource.data.recipientUid is string
+        && request.resource.data.recipientUid != request.auth.uid
+        && approvedUser(request.resource.data.recipientUid)
+        && userProfile(request.auth.uid).data.country
+          == userProfile(request.resource.data.recipientUid).data.country
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.currency in ["THB", "MMK"]
+        && (
+          (
+            userProfile(request.auth.uid).data.country == "Thailand"
+            && request.resource.data.currency == "THB"
+          )
+          ||
+          (
+            userProfile(request.auth.uid).data.country == "Myanmar"
+            && request.resource.data.currency == "MMK"
+          )
+        )
+        && request.resource.data.status == "pending";
+
+      allow read: if signedIn()
+        && (
+          resource.data.senderUid == request.auth.uid
+          || resource.data.recipientUid == request.auth.uid
+          || isAdmin()
+        );
+
+      allow update, delete: if isAdmin();
+    }
+
+    // INTERNATIONAL TRANSFERS
+    match /internationalTransfers/{requestId} {
+      allow create: if signedIn()
+        && approvedUser(request.auth.uid)
+        && request.resource.data.senderUid == request.auth.uid
+        && request.resource.data.type == "international"
+        && request.resource.data.sendAmount is number
+        && request.resource.data.sendAmount > 0
+        && request.resource.data.receiveAmount is number
+        && request.resource.data.receiveAmount > 0
+        && request.resource.data.fromCountry in ["Thailand", "Myanmar"]
+        && request.resource.data.toCountry in ["Thailand", "Myanmar"]
+        && request.resource.data.fromCountry != request.resource.data.toCountry
+        && request.resource.data.status == "pending";
+
+      allow read: if signedIn()
+        && (resource.data.senderUid == request.auth.uid || isAdmin());
+
+      allow update, delete: if isAdmin();
+    }
+
+    // TRANSACTIONS
+    match /transactions/{transactionId} {
+      allow read: if signedIn()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    // DENY ALL OTHER COLLECTIONS
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

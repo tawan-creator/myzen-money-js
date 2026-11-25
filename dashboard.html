@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>MYZEN MONEY - Dashboard</title>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css?v=20261124">
+</head>
+
+<body class="dashboard-page">
+
+  <!-- HEADER -->
+  <header class="dashboard-header">
+    <div class="header-inner">
+
+      <a href="dashboard.html" class="brand">
+        <span class="brand-icon">M</span>
+        <span>MYZEN <strong>MONEY</strong></span>
+      </a>
+
+      <div class="header-actions">
+        <span id="headerName" class="header-user">User</span>
+
+        <a href="profile.html" class="profile-button">
+          <span>♙</span>
+          My Profile
+        </a>
+
+        <button class="logout-button" id="logoutBtn">
+          Logout
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+
+  <!-- MAIN -->
+  <main class="dashboard-container">
+
+    <!-- WELCOME -->
+    <section class="welcome-section">
+      <div>
+        <p class="welcome-subtitle">YOUR PERSONAL WALLET</p>
+
+        <h1 id="welcomeText">Welcome to MYZEN MONEY</h1>
+
+        <p class="welcome-description">
+          Manage your money easily and securely.
+        </p>
+      </div>
+
+      <div class="welcome-decoration">✦</div>
+    </section>
+
+
+    <!-- BALANCE CARD -->
+    <section class="balance-card">
+
+      <div class="balance-card-top">
+        <div>
+          <span class="balance-caption">TOTAL WALLET BALANCE</span>
+          <div class="balance-subtitle">Available Balance</div>
+        </div>
+
+        <div class="wallet-symbol">₿</div>
+      </div>
+
+      <div class="balance-amount" id="balance">
+        Ks 0
+      </div>
+
+      <div class="balance-card-bottom">
+        <span class="status-dot"></span>
+        <span id="accountStatus">Loading account...</span>
+      </div>
+
+      <div class="balance-decoration decoration-one"></div>
+      <div class="balance-decoration decoration-two"></div>
+
+    </section>
+
+
+    <!-- QUICK ACTIONS -->
+    <section class="quick-actions">
+
+      <a href="international-transfer.html" class="quick-action">
+        <span class="quick-icon send-icon">↗</span>
+        <span>Send Money</span>
+      </a>
+
+      <a href="deposit.html" class="quick-action">
+        <span class="quick-icon deposit-icon">＋</span>
+        <span>Deposit</span>
+      </a>
+
+      <a href="withdraw.html" class="quick-action">
+        <span class="quick-icon withdraw-icon">⇧</span>
+        <span>Withdraw</span>
+      </a>
+
+      <a href="receive.html" class="quick-action">
+        <span class="quick-icon receive-icon">↙</span>
+        <span>Receive</span>
+      </a>
+
+    </section>
+
+
+    <!-- MONEY SERVICES -->
+    <section class="services-section">
+
+      <div class="section-heading">
+        <div>
+          <h2>Money Services</h2>
+          <p>Explore all wallet services</p>
+        </div>
+      </div>
+
+      <div class="menu-grid">
+
+        <a href="international-transfer.html" class="menu-item">
+          <span class="service-icon blue">↗</span>
+          <span class="service-name">Send Money</span>
+          <span class="service-arrow">›</span>
+        </a>
+
+        <a href="deposit.html" class="menu-item">
+          <span class="service-icon green">＋</span>
+          <span class="service-name">Deposit</span>
+          <span class="service-arrow">›</span>
+        </a>
+
+        <a href="receive.html" class="menu-item">
+          <span class="service-icon purple">↙</span>
+          <span class="service-name">Receive Money</span>
+          <span class="service-arrow">›</span>
+          
+        </a>
+
+        <a href="withdraw.html" class="menu-item">
+          <span class="service-icon orange">⇧</span>
+          <span class="service-name">Withdraw</span>
+          <span class="service-arrow">›</span>
+        </a>
+
+        <a href="exchange.html" class="menu-item">
+          <span class="service-icon cyan">⇄</span>
+          <span class="service-name">Exchange Rate</span>
+          <span class="service-arrow">›</span>
+        </a>
+
+        <a href="banks.html" class="menu-item">
+          <span class="service-icon pink">▤</span>
+          <span class="service-name">My Banks</span>
+          <span class="service-arrow">›</span>
+        </a>
+
+        <a href="history.html" class="menu-item">
+          <span class="service-icon yellow">◷</span>
+          <span class="service-name">History</span>
+          <span class="service-arrow">›</span>
+        </a>
+
+        <a href="settings.html" class="menu-item">
+          <span class="service-icon gray">⚙</span>
+          <span class="service-name">Settings</span>
+          <span class="service-arrow">›</span>
+        </a>
+
+        <a href="about.html" class="menu-item">
+          <span class="service-icon dark-blue">ⓘ</span>
+          <span class="service-name">About MYZEN</span>
+          <span class="service-arrow">›</span>
+        </a>
+
+      </div>
+
+    </section>
+
+
+    <!-- RECENT TRANSACTIONS -->
+    <section class="transactions-section">
+
+      <div class="section-heading">
+        <div>
+          <h2>Recent Transactions</h2>
+          <p>Your latest wallet activities</p>
+        </div>
+
+        <a href="history.html" class="view-all">
+          View All →
+        </a>
+      </div>
+
+      <div class="transaction-list" id="recentTransactions">
+        <div class="empty-transactions">
+          <div class="empty-icon">◷</div>
+          <h3>No transactions yet</h3>
+          <p>Your recent activities will appear here.</p>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- MESSAGE -->
+    <div id="dashboardMessage" class="dashboard-message"></div>
+
+    <!-- FOOTER -->
+    <footer class="dashboard-footer">
+      <strong>MYZEN MONEY</strong>
+      <p>Simple. Secure. Convenient.</p>
+      <small>© 2026 MYZEN MONEY. All rights reserved.</small>
+    </footer>
+
+  </main>
+
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="bottom-nav">
+
+    <a href="dashboard.html" class="nav-item active">
+      <span>⌂</span>
+      <small>Home</small>
+    </a>
+
+    <a href="international-transfer.html" class="nav-item">
+      <span>↗</span>
+      <small>Send</small>
+    </a>
+
+    <a href="deposit.html" class="nav-item">
+      <span>＋</span>
+      <small>Deposit</small>
+    </a>
+
+    <a href="history.html" class="nav-item">
+      <span>◷</span>
+      <small>History</small>
+    </a>
+
+    <a href="profile.html" class="nav-item">
+      <span>♙</span>
+      <small>Profile</small>
+    </a>
+
+  </nav>
+
+
+  <script type="module" src="js/dashboard.js?v=20261123"></script>
+
+</body>
+</html>

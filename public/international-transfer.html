@@ -1,0 +1,524 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1f45">
+
+  <title>MYZEN MONEY - International Transfer</title>
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f3f6fc;
+      font-family: Arial, sans-serif;
+      color: #17243b;
+    }
+
+    .topbar {
+      min-height: 72px;
+      padding: 0 6%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: white;
+      background: linear-gradient(120deg, #071b40, #1248a0);
+      box-shadow: 0 5px 20px rgba(10,35,80,.13);
+    }
+
+    .brand {
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .topbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 10px 15px;
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 10px;
+    }
+
+    .transfer-container {
+      width: min(100% - 32px, 720px);
+      margin: 30px auto 55px;
+    }
+
+    .page-heading {
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      color: #2865ce;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+
+    .page-heading h1 {
+      margin: 9px 0;
+      font-size: clamp(26px, 5vw, 34px);
+      color: #10264e;
+    }
+
+    .page-heading p {
+      margin: 0;
+      color: #78869b;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .transfer-banner {
+      position: relative;
+      overflow: hidden;
+      padding: 27px;
+      border-radius: 20px;
+      background: linear-gradient(120deg, #102c62, #1762d5);
+      color: white;
+      margin-bottom: 22px;
+      box-shadow: 0 12px 28px rgba(25,82,180,.15);
+    }
+
+    .transfer-banner::after {
+      content: "🌍";
+      position: absolute;
+      right: 24px;
+      top: 12px;
+      font-size: 80px;
+      opacity: .18;
+    }
+
+    .transfer-banner .banner-label {
+      color: #c8dcff;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    .transfer-banner h2 {
+      color: white;
+      font-size: 23px;
+      margin: 12px 0 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .transfer-banner p {
+      color: #dbeafe;
+      font-size: 13px;
+      line-height: 1.7;
+      max-width: 440px;
+      margin: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .transfer-card {
+      background: white;
+      padding: 27px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #e7edf6;
+      box-shadow: 0 8px 25px rgba(20,45,90,.05);
+    }
+
+    .card-heading {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-bottom: 20px;
+    }
+
+    .heading-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border-radius: 14px;
+      background: #eaf1ff;
+      font-size: 23px;
+    }
+
+    .card-heading h2 {
+      margin: 0 0 5px;
+      font-size: 19px;
+      color: #15315d;
+    }
+
+    .card-heading p {
+      margin: 0;
+      font-size: 12px;
+      color: #8995a8;
+    }
+
+    .account-info {
+      background: linear-gradient(120deg, #edf4ff, #f5f8ff);
+      border: 1px solid #dce9ff;
+      border-radius: 13px;
+      padding: 16px;
+      margin: 15px 0 20px;
+      line-height: 1.7;
+      font-size: 13px;
+      color: #31517e;
+      overflow-wrap: anywhere;
+    }
+
+    .route-box {
+      background: #eef5ff;
+      border: 1px solid #dce9ff;
+      border-radius: 13px;
+      padding: 16px;
+      margin: 15px 0 22px;
+      color: #2457a2;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 9px;
+      color: #30415e;
+    }
+
+    input, select, textarea {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px 15px;
+      border: 1px solid #dce3ed;
+      border-radius: 11px;
+      font-size: 14px;
+      background: #fff;
+      color: #17243b;
+      font-family: Arial, sans-serif;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #2865ce;
+      box-shadow: 0 0 0 3px rgba(40,101,206,.10);
+    }
+
+    input[readonly] {
+      background: #f3f6fb;
+      color: #536782;
+      font-weight: 700;
+      cursor: default;
+    }
+
+    .receive-box {
+      background: linear-gradient(135deg, #e9f9f0, #f4fcf7);
+      border: 1px solid #c5ead3;
+      border-radius: 15px;
+      padding: 18px;
+    }
+
+    .receive-box label {
+      color: #187447;
+    }
+
+    .receive-box input {
+      background: white;
+      color: #16834a;
+      font-size: 22px;
+      font-weight: 800;
+      border-color: #d5eddf;
+    }
+
+    .exchange-text {
+      display: block;
+      margin-top: 10px;
+      color: #16834a;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .help-text {
+      background: #fff8e9;
+      border: 1px solid #f4e3bd;
+      border-radius: 12px;
+      padding: 14px;
+      color: #86652a;
+      font-size: 12px;
+      line-height: 1.7;
+      margin: 20px 0;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(120deg, #1557d8, #347bf0);
+      border: 0;
+      border-radius: 12px;
+      color: white;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      box-shadow: 0 7px 17px rgba(21,87,216,.2);
+      transition: transform .2s, opacity .2s;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    .submit-btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .request {
+      border-bottom: 1px solid #e9edf4;
+      padding: 16px 0;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .request:last-child {
+      border-bottom: 0;
+    }
+
+    .request p {
+      margin: 5px 0;
+      font-size: 13px;
+      color: #66758c;
+    }
+
+    .pending {
+      color: #d18b00;
+      font-weight: bold;
+    }
+
+    .approved, .completed {
+      color: #16834a;
+      font-weight: bold;
+    }
+
+    .rejected {
+      color: #d32f2f;
+      font-weight: bold;
+    }
+
+    .back-link {
+      display: inline-flex;
+      margin-bottom: 18px;
+      color: #2865ce;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 22px 10px;
+      font-size: 12px;
+      color: #98a4b6;
+    }
+
+    @media(max-width: 520px) {
+      .topbar {
+        padding: 0 18px;
+      }
+
+      .brand {
+        font-size: 17px;
+      }
+
+      .transfer-container {
+        width: calc(100% - 24px);
+        margin-top: 20px;
+      }
+
+      .transfer-card {
+        padding: 19px;
+        border-radius: 17px;
+      }
+
+      .transfer-banner {
+        padding: 23px 20px;
+      }
+
+      .transfer-banner::after {
+        font-size: 60px;
+        right: 12px;
+      }
+
+      .receive-box input {
+        font-size: 19px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">MYZEN MONEY</div>
+  <a href="dashboard.html">Dashboard ↗</a>
+</header>
+
+<main class="transfer-container">
+
+
+  <section class="page-heading">
+    <div class="eyebrow">MYZEN MONEY TRANSFER</div>
+    <h1>International Transfer 🌍</h1>
+    <p>Send money between Thailand and Myanmar with a simple transfer request.</p>
+  </section>
+
+  <section class="transfer-banner">
+    <div class="banner-label">CROSS-BORDER TRANSFER</div>
+    <h2>Thailand ↔ Myanmar</h2>
+    <p>
+      Enter the recipient's bank details and transfer amount.
+      Your request will be reviewed by the administrator.
+    </p>
+  </section>
+
+  <section class="transfer-card">
+
+    <div class="card-heading">
+      <div class="heading-icon">💳</div>
+      <div>
+        <h2>Transfer Details</h2>
+        <p>Complete the information below</p>
+      </div>
+    </div>
+
+    <div id="accountInfo" class="account-info">
+      Loading account...
+    </div>
+
+    <form id="transferForm">
+
+      <div class="route-box">
+        <strong id="routeText">Loading transfer route...</strong>
+      </div>
+
+      <div class="form-group">
+        <label for="senderCountry">Sending Country</label>
+        <input id="senderCountry" type="text" readonly>
+      </div>
+
+      <div class="form-group">
+        <label for="receiverCountry">Receiving Country</label>
+        <input id="receiverCountry" type="text" readonly>
+      </div>
+
+      <div class="form-group">
+        <label for="bankName">Recipient Bank</label>
+        <select id="bankName" required>
+          <option value="">Loading banks...</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="accountNumber">Recipient Bank Account Number</label>
+        <input id="accountNumber" type="text"
+          placeholder="Enter bank account number" required>
+      </div>
+
+      <div class="form-group">
+        <label for="accountHolder">Account Holder Name</label>
+        <input id="accountHolder" type="text"
+          placeholder="Name registered with the bank" required>
+      </div>
+
+      <div class="form-group">
+        <label for="recipientPhone">Recipient Phone Number</label>
+        <input id="recipientPhone" type="tel"
+          placeholder="Recipient phone number" required>
+      </div>
+
+      <div class="form-group">
+        <label for="amount">Sending Amount</label>
+        <input id="amount" type="number" min="0.01"
+          step="0.01" placeholder="Enter sending amount" required>
+      </div>
+
+      <div class="form-group">
+        <label for="currency">Sending Currency</label>
+        <input id="currency" type="text" readonly>
+      </div>
+
+      <div class="form-group receive-box">
+        <label for="receiveAmount">Receive Amount</label>
+        <input id="receiveAmount" type="text"
+          placeholder="Receive amount" readonly>
+        <small id="exchangeRateText" class="exchange-text">
+          Exchange rate will appear here.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="note">Additional Note (Optional)</label>
+        <textarea id="note" rows="3"
+          placeholder="Additional information"></textarea>
+      </div>
+
+     
+      <button type="submit" id="submitBtn" class="submit-btn" disabled>
+        Loading Account...
+      </button>
+
+      <div id="message"></div>
+
+    </form>
+  </section>
+
+  <section class="transfer-card">
+
+    <div class="card-heading">
+      <div class="heading-icon">📋</div>
+      <div>
+        <h2>My Transfer Requests</h2>
+        <p>Track your transfer request status</p>
+      </div>
+    </div>
+
+    <div id="history">
+      Loading transfer history...
+    </div>
+
+  </section>
+
+</main>
+
+<footer class="footer">
+  © 2026 MYZEN MONEY. All rights reserved.
+</footer>
+
+<script type="module" src="js/international-transfer.js?v=20261124"></script>
+
+</body>
+</html>

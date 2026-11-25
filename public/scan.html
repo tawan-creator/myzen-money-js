@@ -1,0 +1,608 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>MYZEN MONEY - Scan & Transfer</title>
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 18px;
+      background: #eef4ff;
+      font-family: Arial, sans-serif;
+      color: #17315e;
+    }
+
+    .container {
+      max-width: 550px;
+      margin: 25px auto;
+    }
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 22px;
+      box-shadow: 0 10px 35px #164d9918;
+    }
+
+    h1 {
+      color: #0755d9;
+      margin-top: 0;
+    }
+
+    h2 {
+      font-size: 19px;
+      color: #17315e;
+    }
+
+    h3 {
+      font-size: 17px;
+      margin-top: 0;
+    }
+
+    .subtitle {
+      color: #71829c;
+      line-height: 1.6;
+    }
+
+    .back {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: #0755d9;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .country-box {
+      background: #eaf2ff;
+      padding: 17px;
+      border-radius: 13px;
+      margin: 20px 0;
+      line-height: 1.8;
+    }
+
+    .country-box strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .gps-status {
+      margin-top: 12px;
+      padding: 12px;
+      background: #fff7e6;
+      color: #805900;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .scanner-box {
+      background: #f7faff;
+      border: 1px solid #dce8fa;
+      padding: 18px;
+      border-radius: 15px;
+      margin-top: 20px;
+    }
+
+    #reader {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+      background: white;
+      margin-top: 15px;
+    }
+
+    #reader video {
+      border-radius: 10px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 11px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    .primary {
+      background: linear-gradient(120deg, #087cff, #0643c5);
+      color: white;
+    }
+
+    .secondary {
+      background: #e5efff;
+      color: #0755d9;
+    }
+
+    .danger {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .receive-code-lookup {
+      margin: 22px 0;
+      padding: 20px;
+      background: #f0f6ff;
+      border: 1px solid #dce8fa;
+      border-radius: 15px;
+    }
+
+    .receive-code-lookup p {
+      color: #71829c;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .receive-code-lookup input {
+      width: 100%;
+      padding: 16px;
+      border: 1px solid #d5e0f0;
+      border-radius: 10px;
+      font-size: 22px;
+      text-align: center;
+      letter-spacing: 7px;
+      font-weight: bold;
+      color: #0755d9;
+      outline: none;
+    }
+
+    .divider {
+      border: 0;
+      border-top: 1px solid #e5edf8;
+      margin: 24px 0;
+    }
+
+    .recipient-box {
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      padding: 18px;
+      border-radius: 14px;
+      margin: 20px 0;
+      line-height: 1.8;
+    }
+
+    .recipient-box strong {
+      color: #166534;
+    }
+
+    .recipient-value {
+      display: block;
+      overflow-wrap: anywhere;
+      font-weight: bold;
+      color: #17315e;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 17px 0 8px;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #d5e0f0;
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: Arial, sans-serif;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 85px;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: 2px solid #2374ed;
+    }
+
+    #scanMessage {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f1f5f9;
+      border-radius: 10px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+      font-size: 14px;
+    }
+
+    .notice {
+      background: #fff8e5;
+      color: #805900;
+      padding: 14px;
+      border-radius: 11px;
+      margin-top: 20px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 19px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <a href="dashboard.html" class="back">
+    &#8592; Back to Dashboard
+  </a>
+
+  <div class="card">
+
+    <h1>Scan & Transfer</h1>
+
+    <p class="subtitle">
+      Scan a MYZEN MONEY QR Code or enter a 6-digit Receive Code
+      to find the recipient wallet.
+    </p>
+
+    <!-- SENDER ACCOUNT -->
+
+    <div class="country-box">
+
+      <strong>Your Account</strong>
+
+      <div id="accountCountry">Loading country...</div>
+
+      <div id="accountCurrency">Loading currency...</div>
+
+      <div id="gpsStatus" class="gps-status">
+        Requesting GPS permission...
+      </div>
+
+      <button
+        type="button"
+        class="btn secondary"
+        id="retryGPS"
+      >
+        Retry GPS Location
+      </button>
+
+    </div>
+
+    <!-- QR SCANNER -->
+
+    <div class="scanner-box">
+
+      <h2>Scan Recipient QR Code</h2>
+
+      <p class="subtitle">
+        Scan the recipient's MYZEN MONEY Receive QR Code.
+      </p>
+
+      <div id="reader"></div>
+
+      <button
+        type="button"
+        class="btn primary"
+        id="startScan"
+        disabled
+      >
+        Start QR Scanner
+      </button>
+
+      <button
+        type="button"
+        class="btn danger"
+        id="stopScan"
+        disabled
+      >
+        Stop Camera
+      </button>
+
+    </div>
+
+    <!-- MANUAL CODE -->
+
+    <div class="receive-code-lookup">
+
+      <h3>Or Enter Receive Code</h3>
+
+      <p>
+        Enter the recipient's 6-digit MYZEN MONEY Receive Code.
+      </p>
+
+      <input
+        type="text"
+        id="receiveCodeInput"
+        placeholder="000000"
+        maxlength="6"
+        inputmode="numeric"
+        pattern="[0-9]{6}"
+        autocomplete="off"
+      >
+
+      <button
+        type="button"
+        class="btn primary"
+        id="lookupCodeButton"
+        disabled
+      >
+        Find Wallet
+      </button>
+
+    </div>
+
+    <!-- STATUS -->
+
+    <div id="scanMessage">
+      Waiting for account and GPS verification...
+    </div>
+
+    <hr class="divider">
+
+    <!-- RECIPIENT -->
+
+    <div
+      class="recipient-box"
+      id="recipientInfo"
+      hidden
+    >
+
+      <h3>Recipient Wallet</h3>
+
+      <strong>Recipient Name</strong>
+
+      <span class="recipient-value" id="recipientName">-</span>
+
+      <br>
+
+      <strong>Recipient Country</strong>
+
+      <span class="recipient-value" id="recipientCountry">-</span>
+
+      <br>
+
+      <strong>Wallet UID</strong>
+
+      <span class="recipient-value" id="recipientUid">-</span>
+
+    </div>
+
+    <!-- TRANSFER FORM -->
+
+    <form id="qrTransferForm">
+
+      <h2>Transfer Details</h2>
+
+      <label for="qrAmount">Transfer Amount</label>
+
+      <input
+        type="number"
+        id="qrAmount"
+        placeholder="Enter amount"
+        min="0.01"
+        step="0.01"
+        required
+      >
+
+      <label for="qrCurrency">Currency</label>
+
+      <input
+        type="text"
+        id="qrCurrency"
+        readonly
+        placeholder="Country currency"
+        required
+      >
+
+      <label for="qrNote">Transfer Note</label>
+
+      <textarea
+        id="qrNote"
+        placeholder="Enter transfer note (optional)"
+      ></textarea>
+
+      <button
+        type="submit"
+        class="btn primary"
+        id="submitQrTransfer"
+        disabled
+      >
+        Submit Transfer Request
+      </button>
+
+    </form>
+
+    <div class="notice">
+      &#128274; Transfers are restricted to wallets registered
+      in the same country.
+
+      <br><br>
+
+      Your transfer request will remain pending until verified
+      and approved by the administrator.
+
+      <br><br>
+
+      Never share your password or OTP with anyone.
+    </div>
+
+  </div>
+</div>
+
+
+<!-- QR SCANNER LIBRARY -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+
+<!-- GPS LOCATION -->
+<script>
+window.MYZEN_LOCATION = {
+  country: "",
+  currency: "",
+  latitude: null,
+  longitude: null,
+  ready: false
+};
+
+const gpsStatusEl = document.getElementById("gpsStatus");
+
+function normalizeGpsCountry(value) {
+  const country = String(value || "").toLowerCase().trim();
+
+  if (["thailand", "th", "ไทย"].includes(country)) {
+    return "Thailand";
+  }
+
+  if (["myanmar", "mm", "burma", "မြန်မာ"].includes(country)) {
+    return "Myanmar";
+  }
+
+  return "";
+}
+
+function detectMyzenGPS() {
+
+  window.MYZEN_LOCATION.ready = false;
+
+  gpsStatusEl.textContent = "Requesting GPS permission...";
+
+  if (!navigator.geolocation) {
+    gpsStatusEl.textContent =
+      "Your browser does not support GPS location.";
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async function(position) {
+
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+
+      try {
+
+        gpsStatusEl.textContent = "Detecting your country...";
+
+        const response = await fetch(
+          "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" +
+          latitude +
+          "&lon=" +
+          longitude
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to detect GPS country.");
+        }
+
+        const data = await response.json();
+
+        const countryCode = String(
+          data.address?.country_code || ""
+        ).toLowerCase();
+
+        let country = "";
+        let currency = "";
+
+        if (countryCode === "th") {
+          country = "Thailand";
+          currency = "THB";
+        } else if (countryCode === "mm") {
+          country = "Myanmar";
+          currency = "MMK";
+        } else {
+          throw new Error(
+            "MYZEN MONEY is not available in your GPS country."
+          );
+        }
+
+        window.MYZEN_LOCATION = {
+          country,
+          currency,
+          latitude,
+          longitude,
+          ready: true
+        };
+
+        gpsStatusEl.textContent =
+          "GPS verified: " + country + " (" + currency + ")";
+
+        gpsStatusEl.style.background = "#ecfdf5";
+        gpsStatusEl.style.color = "#166534";
+
+        window.dispatchEvent(
+          new Event("myzenlocationchange")
+        );
+
+      } catch (error) {
+
+        console.error("GPS error:", error);
+
+        window.MYZEN_LOCATION.ready = false;
+
+        gpsStatusEl.textContent =
+          error.message || "Unable to verify GPS location.";
+      }
+    },
+
+    function(error) {
+
+      console.error("GPS permission error:", error);
+
+      window.MYZEN_LOCATION.ready = false;
+
+      if (error.code === 1) {
+        gpsStatusEl.textContent =
+          "Location permission denied. Allow location access in browser settings.";
+      } else if (error.code === 2) {
+        gpsStatusEl.textContent =
+          "GPS location unavailable. Check device location settings.";
+      } else if (error.code === 3) {
+        gpsStatusEl.textContent =
+          "GPS request timed out. Please try again.";
+      } else {
+        gpsStatusEl.textContent =
+          "GPS location is required. Please allow GPS access.";
+      }
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 60000
+    }
+  );
+}
+
+document.getElementById("retryGPS").addEventListener(
+  "click",
+  detectMyzenGPS
+);
+
+detectMyzenGPS();
+</script>
+
+
+<!-- SCAN JAVASCRIPT -->
+<script type="module" src="js/scan.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>MYZEN MONEY - Your Digital Wallet</title>
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #eaf3ff, #f8fbff);
+      min-height: 100vh;
+      color: #102b5c;
+    }
+
+    .header {
+      background: rgba(255,255,255,.95);
+      padding: 22px 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 3px 18px rgba(0,60,150,.08);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo {
+      width: 58px;
+      height: 58px;
+      border-radius: 17px;
+      background: linear-gradient(135deg,#078cff,#073fc7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 35px;
+      font-weight: bold;
+      font-style: italic;
+      box-shadow: 0 6px 15px #0756c955;
+    }
+
+    .brand h1 {
+      font-size: 29px;
+      font-weight: 800;
+      color: #102c63;
+    }
+
+    .brand p {
+      color: #6681aa;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .profile {
+      width: 48px;
+      height: 48px;
+      background: #0754d8;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 23px;
+    }
+
+    .main {
+      max-width: 1150px;
+      margin: 55px auto;
+      padding: 0 20px;
+    }
+
+    .auth-card {
+      background: white;
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: 0 15px 45px rgba(0,70,180,.13);
+      border: 1px solid #dceaff;
+    }
+
+    .hero {
+      padding: 45px;
+      background: linear-gradient(115deg,#087bfa,#0643cf,#08a8f5);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 205px;
+      position: relative;
+    }
+
+    .hero h2 {
+      font-size: 38px;
+      margin-bottom: 12px;
+    }
+
+    .hero p {
+      font-size: 21px;
+      color: #d9ecff;
+    }
+
+    .hero-icon {
+      font-size: 100px;
+      opacity: .9;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    .balance-label {
+      font-size: 22px;
+      color: #58739d;
+      margin-bottom: 10px;
+    }
+
+    .balance {
+      font-size: 62px;
+      font-weight: 800;
+      color: #102b5c;
+      margin-bottom: 35px;
+    }
+
+    .balance small {
+      font-size: 14px;
+      font-weight: normal;
+      color: #8298b9;
+    }
+
+    .divider {
+      height: 2px;
+      background: #e2edff;
+      margin-bottom: 32px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+    }
+
+    .btn {
+      min-height: 85px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 22px;
+      font-size: 22px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: .25s;
+    }
+
+    .btn-primary {
+      color: white;
+      background: linear-gradient(120deg,#087cff,#063cc5);
+      box-shadow: 0 8px 20px #0754d833;
+    }
+
+    .btn-secondary {
+      color: #0751d4;
+      background: white;
+      border: 3px solid #0758ed;
+    }
+
+    .btn:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 25px #0754d844;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 35px 15px;
+      color: #5275a8;
+      font-size: 15px;
+    }
+
+    .secure {
+      display: inline-block;
+      padding: 12px 25px;
+      background: #e3efff;
+      border-radius: 30px;
+      color: #0751c9;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    @media(max-width:650px) {
+      .header {
+        padding: 17px;
+      }
+
+      .brand h1 {
+        font-size: 21px;
+      }
+
+      .logo {
+        width: 45px;
+        height: 45px;
+        font-size: 28px;
+      }
+
+      .profile {
+        width: 40px;
+        height: 40px;
+      }
+
+      .main {
+        margin: 25px auto;
+        padding: 0 13px;
+      }
+
+      .hero {
+        padding: 30px 22px;
+        min-height: 160px;
+      }
+
+      .hero h2 {
+        font-size: 25px;
+      }
+
+      .hero p {
+        font-size: 15px;
+      }
+
+      .hero-icon {
+        font-size: 55px;
+      }
+
+      .content {
+        padding: 25px 20px;
+      }
+
+      .balance {
+        font-size: 45px;
+      }
+
+      .buttons {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      .btn {
+        min-height: 65px;
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="header">
+
+  <div class="brand">
+    <div class="logo">M</div>
+
+    <div>
+      <h1>MYZEN MONEY</h1>
+      <p>Your Digital Wallet</p>
+    </div>
+  </div>
+
+  <div class="profile">●</div>
+
+</header>
+
+<main class="main">
+
+  <div class="auth-card">
+
+    <div class="hero">
+      <div>
+        <h2>Welcome Back!</h2>
+        <p>Your Digital Wallet</p>
+      </div>
+
+      <div class="hero-icon">👛</div>
+    </div>
+
+    <div class="content">
+
+      <div class="balance-label">Your Balance</div>
+
+      <div class="balance">
+        $0.00
+        <small>DEMO</small>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="buttons">
+
+        <a href="login.html" class="btn btn-primary">
+          ↪ &nbsp; Login &nbsp; ❯
+        </a>
+
+        <a href="register.html" class="btn btn-secondary">
+          + &nbsp; Create Account &nbsp; ❯
+        </a>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+<footer class="footer">
+
+  <div class="secure">
+    🔒 Secure • Fast • Reliable
+  </div>
+
+  <p>© 2026 MYZEN MONEY. All Rights Reserved.</p>
+
+</footer>
+
+</body>
+</html>

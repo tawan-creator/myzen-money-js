@@ -1,0 +1,402 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1f45">
+
+  <title>Send Money - MYZEN MONEY</title>
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f3f6fc;
+      font-family: Arial, sans-serif;
+      color: #17233c;
+    }
+
+    .topbar {
+      background: linear-gradient(120deg, #071b40, #1248a0);
+      color: white;
+      min-height: 72px;
+      padding: 0 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 5px 20px rgba(10, 35, 80, .15);
+    }
+
+    .brand {
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .topbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 10px;
+    }
+
+    .container {
+      width: min(100% - 32px, 900px);
+      margin: 35px auto;
+    }
+
+    .welcome {
+      margin-bottom: 25px;
+    }
+
+    .welcome .eyebrow {
+      color: #2463d5;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .welcome h1 {
+      font-size: clamp(27px, 5vw, 36px);
+      margin: 10px 0;
+      color: #10264e;
+    }
+
+    .welcome p {
+      color: #718096;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    .transfer-banner {
+      position: relative;
+      overflow: hidden;
+      padding: 30px;
+      border-radius: 22px;
+      background: linear-gradient(120deg, #102c62, #1762d5);
+      color: white;
+      margin-bottom: 25px;
+      box-shadow: 0 12px 30px rgba(25, 82, 180, .18);
+    }
+
+    .transfer-banner::before,
+    .transfer-banner::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,.07);
+    }
+
+    .transfer-banner::before {
+      width: 220px;
+      height: 220px;
+      right: -65px;
+      top: -100px;
+    }
+
+    .transfer-banner::after {
+      width: 150px;
+      height: 150px;
+      right: 100px;
+      bottom: -110px;
+    }
+
+    .banner-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .banner-label {
+      font-size: 12px;
+      letter-spacing: 2px;
+      font-weight: 700;
+      color: #c8dcff;
+    }
+
+    .transfer-banner h2 {
+      font-size: 25px;
+      margin: 12px 0 8px;
+    }
+
+    .transfer-banner p {
+      color: #dbeafe;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 500px;
+      margin: 0;
+    }
+
+    .banner-icon {
+      font-size: 38px;
+      margin-top: 18px;
+    }
+
+    .section-heading {
+      margin: 30px 0 16px;
+    }
+
+    .section-heading h2 {
+      font-size: 20px;
+      margin: 0 0 7px;
+      color: #142747;
+    }
+
+    .section-heading p {
+      font-size: 13px;
+      color: #8491a7;
+      margin: 0;
+    }
+
+    .send-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .send-option {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 240px;
+      padding: 25px;
+      text-decoration: none;
+      color: #17233c;
+      background: white;
+      border: 1px solid #e5eaf3;
+      border-radius: 20px;
+      box-shadow: 0 7px 22px rgba(20, 45, 90, .045);
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+
+    .send-option:hover {
+      transform: translateY(-5px);
+      border-color: #3678e8;
+      box-shadow: 0 15px 30px rgba(30, 85, 170, .12);
+    }
+
+    .option-icon {
+      width: 65px;
+      height: 65px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
+
+    .international-icon {
+      background: #e8f0ff;
+    }
+
+    .scan-icon {
+      background: #e5f8f1;
+    }
+
+    .option-tag {
+      display: inline-block;
+      width: fit-content;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #2865ce;
+      background: #edf4ff;
+      padding: 6px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    .send-option strong {
+      font-size: 20px;
+      margin-bottom: 9px;
+    }
+
+    .send-option small {
+      color: #7b879b;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .option-arrow {
+      margin-top: auto;
+      padding-top: 20px;
+      color: #2865ce;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .security-note {
+      display: flex;
+      gap: 13px;
+      align-items: flex-start;
+      background: #edf7ff;
+      border: 1px solid #d8eaff;
+      padding: 17px;
+      border-radius: 15px;
+      margin-top: 25px;
+    }
+
+    .security-note .icon {
+      font-size: 23px;
+    }
+
+    .security-note strong {
+      display: block;
+      font-size: 13px;
+      color: #174b8f;
+      margin-bottom: 5px;
+    }
+
+    .security-note p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #60758e;
+    }
+
+    .back-button {
+      display: inline-flex;
+      margin-top: 25px;
+      padding: 13px 20px;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      color: #29456f;
+      border: 1px solid #dce4ef;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .back-button:hover {
+      background: #edf3ff;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 25px 10px;
+      color: #9aa6b8;
+      font-size: 12px;
+    }
+
+    @media(max-width: 600px) {
+      .topbar {
+        padding: 0 18px;
+      }
+
+      .brand {
+        font-size: 17px;
+      }
+
+      .container {
+        margin-top: 25px;
+      }
+
+      .transfer-banner {
+        padding: 24px;
+      }
+
+      .send-options {
+        grid-template-columns: 1fr;
+      }
+
+      .send-option {
+        min-height: 220px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">MYZEN MONEY</div>
+  <a href="dashboard.html">Dashboard ↗</a>
+</header>
+
+<main class="container">
+
+  <section class="welcome">
+    <div class="eyebrow">MYZEN MONEY TRANSFER</div>
+    <h1>Send Money 💸</h1>
+    <p>Fast, simple and convenient money transfers with MYZEN MONEY.</p>
+  </section>
+
+  <section class="transfer-banner">
+    <div class="banner-content">
+      <div class="banner-label">SMART & SIMPLE TRANSFERS</div>
+      <h2>Send Money Anywhere</h2>
+      <p>
+        Transfer money internationally or scan a wallet QR code.
+        Choose the transfer method that works best for you.
+      </p>
+      <div class="banner-icon">🌍 💳 ✨</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-heading">
+      <h2>Choose Transfer Method</h2>
+      <p>Select how you want to send money.</p>
+    </div>
+
+    <div class="send-options">
+
+      <a href="international.html" class="send-option">
+        <div class="option-icon international-icon">🌍</div>
+        <span class="option-tag">CROSS-BORDER</span>
+        <strong>International Transfer</strong>
+        <small>
+          Send money between Thailand, Myanmar
+          and other supported countries.
+        </small>
+        <div class="option-arrow">Continue Transfer →</div>
+      </a>
+
+      <a href="scan.html" class="send-option">
+        <div class="option-icon scan-icon">📷</div>
+        <span class="option-tag">QUICK TRANSFER</span>
+        <strong>Scan QR Code</strong>
+        <small>
+          Scan a MYZEN MONEY wallet QR code
+          to identify the recipient.
+        </small>
+        <div class="option-arrow">Open QR Scanner →</div>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="security-note">
+    <div class="icon">🔒</div>
+    <div>
+      <strong>Transfer Safely</strong>
+      <p>
+        Always verify the recipient's name and transfer details
+        before confirming a transaction. Never share your password
+        or OTP with anyone.
+      </p>
+    </div>
+  </section>
+
+  <a class="back-button" href="dashboard.html">← Back to Dashboard</a>
+
+</main>
+
+<footer class="footer">
+  © 2026 MYZEN MONEY. All rights reserved.
+</footer>
+
+</body>
+</html>

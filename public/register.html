@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>MYZEN MONEY - Create Account</title>
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, #d9f5ed, transparent 38%),
+        linear-gradient(135deg, #eef4ff, #f8fbff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 35px 15px;
+      color: #17243b;
+    }
+
+    .auth-container {
+      width: 100%;
+      max-width: 490px;
+    }
+
+    .auth-card {
+      background: #ffffff;
+      padding: 36px;
+      border-radius: 24px;
+      box-shadow: 0 18px 55px rgba(22, 43, 76, 0.12);
+      border: 1px solid #e8eef6;
+    }
+
+    .logo-area {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .logo-icon {
+      width: 65px;
+      height: 65px;
+      margin: 0 auto 12px;
+      border-radius: 19px;
+      background: linear-gradient(135deg, #073b70, #087f75);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 29px;
+      font-weight: bold;
+      box-shadow: 0 8px 20px rgba(7, 59, 112, .2);
+    }
+
+    .logo-area h1 {
+      margin: 0;
+      color: #073b70;
+      font-size: 27px;
+      letter-spacing: 1px;
+      font-weight: 800;
+    }
+
+    .logo-area p {
+      color: #8190a5;
+      margin: 9px 0 0;
+      font-size: 14px;
+    }
+
+    .welcome-title {
+      font-size: 23px;
+      margin: 0 0 7px;
+      color: #17243b;
+    }
+
+    .welcome-subtitle {
+      color: #8290a3;
+      font-size: 13px;
+      margin: 0 0 25px;
+      line-height: 1.6;
+    }
+
+    .form-group {
+      margin-bottom: 17px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #34445b;
+    }
+
+    input, select {
+      width: 100%;
+      height: 49px;
+      padding: 0 14px;
+      border: 1px solid #dce4ee;
+      border-radius: 11px;
+      background: #f9fbfd;
+      font-size: 14px;
+      outline: none;
+      color: #26364d;
+      transition: .2s;
+    }
+
+    input:focus, select:focus {
+      border-color: #087f75;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(8, 127, 117, .10);
+    }
+
+    input::placeholder {
+      color: #a5b0bf;
+    }
+
+    .password-wrap {
+      position: relative;
+    }
+
+    .password-wrap input {
+      padding-right: 65px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: #087f75;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 8px;
+    }
+
+    .demo-notice {
+      padding: 12px 14px;
+      background: #fff8e8;
+      border: 1px solid #f4dfad;
+      border-radius: 11px;
+      color: #85621b;
+      font-size: 12px;
+      line-height: 1.6;
+      margin: 5px 0 20px;
+    }
+
+    .btn-block {
+      width: 100%;
+      height: 51px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #073b70, #087f75);
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(7, 80, 105, .18);
+      transition: .2s;
+    }
+
+    .btn-block:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 11px 22px rgba(7, 80, 105, .24);
+    }
+
+    .btn-block:disabled {
+      opacity: .65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #registerMessage {
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
+      margin: 15px 0 0;
+      overflow-wrap: anywhere;
+    }
+
+    .login-link {
+      text-align: center;
+      margin: 23px 0 0;
+      font-size: 13px;
+      color: #7b8798;
+    }
+
+    .login-link a {
+      color: #087f75;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-note {
+      text-align: center;
+      color: #a0aaba;
+      font-size: 11px;
+      margin-top: 22px;
+    }
+
+    @media(max-width: 480px) {
+      body {
+        padding: 18px 12px;
+      }
+
+      .auth-card {
+        padding: 25px 20px;
+        border-radius: 19px;
+      }
+
+      .logo-area h1 {
+        font-size: 24px;
+      }
+
+      .welcome-title {
+        font-size: 21px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="auth-container">
+  <div class="auth-card">
+
+    <div class="logo-area">
+      <div class="logo-icon">M</div>
+      <h1>MYZEN MONEY</h1>
+      <p class="welcome-subtitle">
+      Join MYZEN MONEY and manage your wallet securely.
+    </p>
+    
+    </div>
+
+    <form id="registerForm">
+
+      <div class="form-group">
+        <label for="country">Select Your Country</label>
+        <select id="country" required>
+          <option value="">Choose Country</option>
+          <option value="Thailand">🇹🇭 Thailand</option>
+          <option value="Myanmar">🇲🇲 Myanmar</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input id="name" type="text"
+          placeholder="Enter full name"
+          required minlength="2" autocomplete="name">
+      </div>
+
+      <div class="form-group">
+        <label for="nrc">NRC Number (Demo Only)</label>
+        <input id="nrc" type="text"
+          placeholder="Enter demo NRC number"
+          required>
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input id="phone" type="tel"
+          placeholder="Enter phone number"
+          required autocomplete="tel">
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input id="email" type="email"
+          placeholder="Enter email address"
+          required autocomplete="email">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-wrap">
+          <input id="password" type="password"
+            placeholder="Minimum 6 characters"
+            required minlength="6"
+            autocomplete="new-password">
+          <button type="button" class="toggle-password"
+            onclick="togglePassword('password', this)">SHOW</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <div class="password-wrap">
+          <input id="confirmPassword" type="password"
+            placeholder="Confirm your password"
+            required minlength="6"
+            autocomplete="new-password">
+          <button type="button" class="toggle-password"
+            onclick="togglePassword('confirmPassword', this)">SHOW</button>
+        </div>
+      </div>
+
+      <button type="submit" id="registerBtn" class="btn-block">
+        Create Account →
+      </button>
+
+    </form>
+
+    <p id="registerMessage" role="status" aria-live="polite"></p>
+
+    <p class="login-link">
+      Already have an account?
+      <a href="login.html">Login Here</a>
+    </p>
+
+    <p class="footer-note">
+      MYZEN MONEY · Wallet Platform
+    </p>
+
+  </div>
+</div>
+
+<script>
+  function togglePassword(id, button) {
+    const input = document.getElementById(id);
+
+    if (input.type === "password") {
+      input.type = "text";
+      button.textContent = "HIDE";
+    } else {
+      input.type = "password";
+      button.textContent = "SHOW";
+    }
+  }
+</script>
+
+<script type="module" src="auth.js"></script>
+
+</body>
+</html>

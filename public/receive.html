@@ -1,0 +1,327 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>MYZEN MONEY - Receive Money</title>
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      background: #f3f6fc;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #17315e;
+    }
+
+    .receive-wrapper {
+      width: 100%;
+      max-width: 480px;
+      margin: 15px auto;
+      padding: 25px 20px;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+      text-align: center;
+    }
+
+    .receive-wrapper h2 {
+      margin: 5px 0 15px;
+      font-size: 25px;
+      color: #17315e;
+    }
+
+    .subtitle {
+      color: #71829c;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0 0 22px;
+    }
+
+    .country-info {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    .country-info span {
+      display: inline-block;
+      padding: 12px 15px;
+      background: #eef3fb;
+      border-radius: 11px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #17315e;
+    }
+
+    .qr-section {
+      width: 100%;
+      margin: 25px auto 30px;
+      text-align: center;
+    }
+
+    .qr-section h3 {
+      font-size: 18px;
+      margin: 0 0 12px;
+      color: #17315e;
+    }
+
+    .qr-section .subtitle {
+      margin-bottom: 22px;
+    }
+
+    .qr-container {
+      width: 260px;
+      height: 260px;
+      margin: 0 auto 22px;
+      padding: 19px;
+      background: #ffffff;
+      border: 1px solid #dce5f1;
+      border-radius: 19px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+    }
+
+    #receiveQr {
+      width: 220px;
+      height: 220px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #receiveQr canvas,
+    #receiveQr img {
+      display: block;
+      width: 220px !important;
+      height: 220px !important;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
+    .receive-code-box {
+      width: 100%;
+      margin-top: 28px;
+      padding: 22px 15px;
+      background: #f3f6fc;
+      border-radius: 16px;
+    }
+
+    .receive-code-box h3 {
+      margin: 0 0 22px;
+      font-size: 18px;
+      color: #17315e;
+    }
+
+    #receiveCode {
+      min-height: 42px;
+      margin: 10px 0 20px;
+      font-size: 30px;
+      font-weight: bold;
+      letter-spacing: 7px;
+      color: #17315e;
+      overflow-wrap: anywhere;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 13px 22px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .download-btn {
+      width: 185px;
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .copy-btn {
+      width: 145px;
+      background: #15803d;
+      color: #ffffff;
+    }
+
+    button:not(:disabled):active {
+      transform: scale(0.97);
+    }
+
+    #receiveCodeMessage {
+      min-height: 20px;
+      margin: 15px 0 5px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #71829c;
+      overflow-wrap: anywhere;
+    }
+
+    #message {
+      margin-top: 12px;
+      color: #991b1b;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .notice {
+      margin-top: 22px;
+      padding: 14px;
+      background: #fff7e6;
+      color: #8a5a00;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.7;
+      text-align: left;
+    }
+
+    @media (max-width: 400px) {
+      body {
+        padding: 10px;
+      }
+
+      .receive-wrapper {
+        padding: 22px 13px;
+      }
+
+      .qr-container {
+        width: 250px;
+        height: 250px;
+      }
+
+      #receiveQr {
+        width: 210px;
+        height: 210px;
+      }
+
+      #receiveQr canvas,
+      #receiveQr img {
+        width: 210px !important;
+        height: 210px !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="receive-wrapper">
+
+    <h2>Receive Money</h2>
+
+    <p class="subtitle">
+      Receive money using your MYZEN MONEY QR Code
+    </p>
+
+    <!-- COUNTRY AND CURRENCY -->
+
+    <div class="country-info">
+
+      <span id="country">
+        Loading country...
+      </span>
+
+      <span id="currency">
+        Loading currency...
+      </span>
+
+    </div>
+
+
+    <!-- QR CODE -->
+
+    <section class="qr-section">
+
+      <h3>My Receive QR Code</h3>
+
+      <p class="subtitle">
+        Scan this QR code to receive money
+      </p>
+
+      <div class="qr-container">
+
+        <div id="receiveQr"></div>
+
+      </div>
+
+      <button
+        type="button"
+        id="downloadReceiveQr"
+        class="download-btn"
+        disabled
+      >
+        Download QR Code
+      </button>
+
+    </section>
+
+
+    <!-- RECEIVE CODE -->
+
+    <section class="receive-code-box">
+
+      <h3>My Receive Code</h3>
+
+      <div id="receiveCode">
+        ------
+      </div>
+
+      <button
+        type="button"
+        id="copyReceiveCode"
+        class="copy-btn"
+        disabled
+      >
+        Copy Code
+      </button>
+
+      <p id="receiveCodeMessage">
+        Loading your wallet...
+      </p>
+
+    </section>
+
+
+    <!-- ERROR MESSAGE -->
+
+    <div id="message"></div>
+
+
+    <!-- NOTICE -->
+
+    <div class="notice">
+      Share your QR Code or 6-digit Receive Code with the sender.
+      Never share your password or OTP with anyone.
+    </div>
+
+  </main>
+
+
+  <!-- RECEIVE JAVASCRIPT -->
+
+  <script type="module" src="js/receive.js"></script>
+
+</body>
+</html>

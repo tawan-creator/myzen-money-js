@@ -1,0 +1,776 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MYZEN MONEY | Deposit</title>
+
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --primary: #2563eb;
+  --dark: #10244a;
+  --muted: #77849b;
+  --background: #f3f6fc;
+  --border: #e7ecf4;
+}
+
+body {
+  background: var(--background);
+  color: #18243a;
+  font-family: Inter, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 1100px;
+  margin: auto;
+  padding: 25px 22px 50px;
+}
+
+/* HEADER */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 15px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  width: 47px;
+  height: 47px;
+  border-radius: 14px;
+  background: linear-gradient(135deg,#2563eb,#7048e8);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 23px;
+  font-weight: 900;
+  box-shadow: 0 7px 18px #2563eb35;
+}
+
+.brand-name {
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: .5px;
+}
+
+.brand-subtitle {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.country-pill {
+  background: white;
+  padding: 10px 15px;
+  border-radius: 30px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.logout {
+  background: #fff0f0;
+  color: #d33b4b;
+  border: 0;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* PAGE TITLE */
+
+.page-heading {
+  margin-bottom: 23px;
+}
+
+.page-heading h1 {
+  font-size: 30px;
+  font-weight: 850;
+  letter-spacing: -.8px;
+}
+
+.page-heading p {
+  color: var(--muted);
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+/* MAIN GRID */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.left-column,
+.right-column {
+  display: grid;
+  gap: 20px;
+}
+
+/* BALANCE CARD */
+
+.balance-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(125deg,#173d91 0%,#2563eb 55%,#7956e9 100%);
+  padding: 28px;
+  border-radius: 22px;
+  color: white;
+  min-height: 205px;
+  box-shadow: 0 15px 30px #2563eb25;
+}
+
+.balance-card::before {
+  content: "";
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  border: 35px solid #ffffff12;
+  border-radius: 50%;
+  right: -45px;
+  top: -65px;
+}
+
+.balance-card::after {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: #ffffff10;
+  border-radius: 50%;
+  right: 80px;
+  bottom: -85px;
+}
+
+.balance-label {
+  font-size: 13px;
+  color: #dce7ff;
+  position: relative;
+  z-index: 1;
+}
+
+.balance-value {
+  font-size: 34px;
+  font-weight: 900;
+  margin-top: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.balance-bottom {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #e0eaff;
+  position: relative;
+  z-index: 1;
+}
+
+/* CARD */
+
+.panel {
+  background: white;
+  padding: 24px;
+  border-radius: 19px;
+  border: 1px solid #edf0f6;
+  box-shadow: 0 7px 25px #142b4b08;
+}
+
+.panel-title {
+  font-size: 18px;
+  font-weight: 850;
+  margin-bottom: 7px;
+}
+
+.panel-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+/* FORM */
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 750;
+  margin-bottom: 8px;
+}
+
+.form-group {
+  margin-bottom: 19px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 15px;
+  background: #f9fbff;
+  border: 1px solid #e3e9f3;
+  border-radius: 12px;
+  outline: none;
+  color: #18243a;
+  font-size: 15px;
+  transition: .2s;
+}
+
+.form-control:focus {
+  border-color: var(--primary);
+  background: white;
+  box-shadow: 0 0 0 4px #2563eb12;
+}
+
+.amount-wrap {
+  position: relative;
+}
+
+.amount-currency {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary);
+  font-weight: 900;
+}
+
+#depositAmount {
+  padding-left: 55px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+/* PAYMENT INFO */
+
+.payment-info {
+  display: none;
+  background: linear-gradient(145deg,#f4f7ff,#ffffff);
+  border: 1px solid #dce6ff;
+  border-radius: 16px;
+  padding: 19px;
+  margin-bottom: 20px;
+}
+
+.payment-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 17px;
+}
+
+.payment-icon {
+  width: 40px;
+  height: 40px;
+  background: #e8efff;
+  color: var(--primary);
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  font-size: 20px;
+}
+
+.payment-heading h3 {
+  font-size: 16px;
+}
+
+.payment-detail {
+  padding: 12px 0;
+  border-bottom: 1px solid #e5eaf4;
+}
+
+.payment-detail:last-child {
+  border-bottom: 0;
+}
+
+.detail-label {
+  color: var(--muted);
+  font-size: 12px;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.detail-value {
+  font-size: 16px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.copy-btn {
+  margin-top: 9px;
+  background: #e9f0ff;
+  color: #2563eb;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 13px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* QR */
+
+.qr-area {
+  display: none;
+  text-align: center;
+  margin-top: 17px;
+  padding: 20px;
+  background: white;
+  border: 1px dashed #cbd7ee;
+  border-radius: 15px;
+}
+
+.qr-title {
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.qr-caption {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+#promptPayQR {
+  display: flex;
+  justify-content: center;
+  margin: 16px auto;
+  min-height: 10px;
+}
+
+#promptPayQR img,
+#promptPayQR canvas {
+  max-width: 220px;
+  height: auto;
+  padding: 8px;
+  border: 1px solid #edf0f6;
+  border-radius: 10px;
+}
+
+#qrWarning,
+#paymentNotice {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #9a5b00;
+  background: #fff7e8;
+  border-radius: 9px;
+  padding: 10px;
+}
+
+/* SUBMIT */
+
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(100deg,#2563eb,#6249df);
+  color: white;
+  font-size: 15px;
+  font-weight: 850;
+  cursor: pointer;
+  box-shadow: 0 8px 17px #2563eb30;
+  transition: .2s;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px #2563eb35;
+}
+
+.submit-btn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* MESSAGE */
+
+.message {
+  display: none;
+  margin-top: 15px;
+  padding: 13px;
+  border-radius: 10px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+/* HISTORY */
+
+.history-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #edf0f6;
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.history-item:last-child {
+  border-bottom: 0;
+}
+
+.status {
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: 20px;
+  background: #fff5d9;
+  color: #9a6700;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+/* SECURITY NOTE */
+
+.security-note {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 15px;
+  background: #edf5ff;
+  border: 1px solid #d9e9ff;
+  border-radius: 13px;
+  color: #315b96;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* MOBILE */
+
+@media(max-width: 800px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .app {
+    padding: 20px 15px 40px;
+  }
+}
+
+@media(max-width: 500px) {
+  .header {
+    align-items: flex-start;
+  }
+
+  .brand-name {
+    font-size: 18px;
+  }
+
+  .country-pill {
+    display: none;
+  }
+
+  .page-heading h1 {
+    font-size: 25px;
+  }
+
+  .balance-card {
+    padding: 23px;
+    min-height: 185px;
+  }
+
+  .balance-value {
+    font-size: 29px;
+  }
+
+  .panel {
+    padding: 19px;
+  }
+
+  .header-right {
+    gap: 5px;
+  }
+
+  .logout {
+    padding: 9px 11px;
+    font-size: 12px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+
+    <div class="brand">
+      <div class="brand-logo">M</div>
+
+      <div>
+        <div class="brand-name">MYZEN MONEY</div>
+        <div class="brand-subtitle">SMART DIGITAL WALLET</div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="country-pill">
+        <span id="accountCountry">Loading...</span>
+      </div>
+
+      <button type="button" class="logout" id="logoutBtn">
+        Logout
+      </button>
+    </div>
+
+  </header>
+
+
+  <!-- PAGE TITLE -->
+  <div class="page-heading">
+    <h1>Deposit Money</h1>
+    <p>Add money to your MYZEN MONEY wallet securely.</p>
+  </div>
+
+
+  <div class="dashboard-grid">
+
+    <!-- LEFT COLUMN -->
+    <div class="left-column">
+
+      <!-- BALANCE -->
+      <section class="balance-card">
+
+        <div class="balance-label">Available Wallet Balance</div>
+
+        <div class="balance-value">
+          <span id="accountCurrency"></span>
+          <span id="currentBalance">0.00</span>
+        </div>
+
+        <div class="balance-bottom">
+          MYZEN MONEY • DIGITAL WALLET
+        </div>
+
+      </section>
+
+
+      <!-- SECURITY -->
+      <div class="security-note">
+        <div style="font-size:22px">🔒</div>
+        <div>
+          <strong>Secure Deposit</strong>
+          <p>
+            Your deposit request will be reviewed by Admin.
+            Your wallet balance changes only after approval.
+          </p>
+        </div>
+      </div>
+
+
+      <!-- HISTORY -->
+      <section class="panel">
+
+        <h2 class="panel-title">Deposit History</h2>
+        <p class="panel-subtitle">
+          Track your previous deposit requests.
+        </p>
+
+        <div id="depositHistory">
+          Loading history...
+        </div>
+
+      </section>
+
+    </div>
+
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-column">
+
+      <section class="panel">
+
+        <h2 class="panel-title">Add Funds</h2>
+
+        <p class="panel-subtitle">
+          Enter your deposit details below.
+        </p>
+
+
+        <form id="depositForm">
+
+          <!-- AMOUNT -->
+          <div class="form-group">
+
+            <label class="form-label" for="depositAmount">
+              Deposit Amount
+            </label>
+
+            <div class="amount-wrap">
+
+              <span class="amount-currency" id="amountCurrency">
+                $
+              </span>
+
+              <input
+                class="form-control"
+                type="number"
+                id="depositAmount"
+                min="1"
+                step="0.01"
+                placeholder="0.00"
+                required
+              >
+
+            </div>
+
+          </div>
+
+
+          <!-- PAYMENT METHOD -->
+          <div class="form-group">
+
+            <label class="form-label" for="paymentMethod">
+              Select Payment Method
+            </label>
+
+            <select
+              class="form-control"
+              id="paymentMethod"
+              required
+            >
+              <option value="">Choose payment method</option>
+            </select>
+
+          </div>
+
+
+          <!-- PAYMENT INFORMATION -->
+          <div class="payment-info" id="paymentInformation">
+
+            <div class="payment-heading">
+              <div class="payment-icon">💳</div>
+              <h3 id="paymentTitle">Payment Information</h3>
+            </div>
+
+            <div class="payment-detail">
+              <span class="detail-label">Payment Method</span>
+              <span class="detail-value" id="paymentBank">-</span>
+            </div>
+
+            <div class="payment-detail">
+              <span class="detail-label">Account Number</span>
+              <span class="detail-value" id="paymentAccountNumber">-</span>
+
+              <button
+                type="button"
+                class="copy-btn"
+                id="copyAccountNumber"
+              >
+                Copy Account Number
+              </button>
+            </div>
+
+            <div class="payment-detail">
+              <span class="detail-label">Account Holder</span>
+              <span class="detail-value" id="paymentHolder">-</span>
+            </div>
+
+            <div class="qr-area" id="qrArea">
+
+              <div class="qr-title">PromptPay QR Code</div>
+
+              <p class="qr-caption">
+                Scan QR with a supported payment app
+              </p>
+
+              <div id="promptPayQR"></div>
+
+              <p id="qrWarning">
+                DEMO QR ONLY — NOT A REAL PAYMENT QR.
+              </p>
+
+            </div>
+
+            <p id="paymentNotice"></p>
+
+          </div>
+
+
+          <!-- TRANSACTION -->
+          <div class="form-group">
+
+            <label class="form-label" for="transactionId">
+              Transaction ID / Reference
+            </label>
+
+            <input
+              class="form-control"
+              type="text"
+              id="transactionId"
+              placeholder="Enter transaction reference"
+              required
+            >
+
+          </div>
+
+
+          <!-- NOTE -->
+          <div class="form-group">
+
+            <label class="form-label" for="depositNote">
+              Additional Note (Optional)
+            </label>
+
+            <textarea
+              class="form-control"
+              id="depositNote"
+              placeholder="Write your note here..."
+            ></textarea>
+
+          </div>
+
+
+          <!-- SUBMIT -->
+          <button
+            type="submit"
+            class="submit-btn"
+            id="depositBtn"
+          >
+            Submit Deposit Request →
+          </button>
+
+          <div id="depositMessage" class="message"></div>
+
+        </form>
+
+      </section>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script type="module" src="js/deposit.js?v=20261124design2"></script>
+
+</body>
+</html>

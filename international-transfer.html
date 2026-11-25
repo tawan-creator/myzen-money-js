@@ -1,0 +1,360 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>MYZEN MONEY - International Transfer</title>
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    body {
+      background: #f1f5fb;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      color: #17243b;
+    }
+
+    .transfer-container {
+      width: 92%;
+      max-width: 650px;
+      margin: 25px auto 60px;
+    }
+
+    .transfer-card {
+      background: white;
+      padding: 24px;
+      border-radius: 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 5px 20px rgba(0,0,0,.05);
+    }
+
+    .back-link {
+      color: #1557d8;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      color: #164b91;
+      margin-top: 0;
+    }
+
+    .description {
+      color: #66758c;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .account-info,
+    .route-box {
+      background: #edf3ff;
+      border-radius: 12px;
+      padding: 14px;
+      margin: 15px 0;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px;
+      border: 1px solid #cbd5e5;
+      border-radius: 10px;
+      font-size: 15px;
+      background: white;
+      color: #17243b;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #1557d8;
+    }
+
+    input[readonly] {
+      background: #f1f5fb;
+      font-weight: bold;
+    }
+
+    .receive-box {
+      background: #eaf8f0;
+      border: 1px solid #b9e7ca;
+      border-radius: 12px;
+      padding: 15px;
+    }
+
+    .receive-box input {
+      background: white;
+      color: #16834a;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .exchange-text {
+      display: block;
+      margin-top: 9px;
+      color: #16834a;
+      font-size: 13px;
+    }
+
+    .help-text {
+      color: #687991;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 15px;
+      background: #1557df;
+      border: 0;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .submit-btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 14px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .request {
+      border-bottom: 1px solid #e4eaf2;
+      padding: 15px 0;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .request p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .pending {
+      color: #d18b00;
+      font-weight: bold;
+    }
+
+    .approved,
+    .completed {
+      color: #16834a;
+      font-weight: bold;
+    }
+
+    .rejected {
+      color: #d32f2f;
+      font-weight: bold;
+    }
+
+    .muted {
+      color: #738096;
+      font-size: 12px !important;
+    }
+
+    @media(max-width: 480px) {
+      .transfer-container {
+        width: 94%;
+        margin-top: 12px;
+      }
+
+      .transfer-card {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<main class="transfer-container">
+
+  <section class="transfer-card">
+
+    <a href="dashboard.html" class="back-link">
+      ← Back to Dashboard
+    </a>
+
+    <h2>International Bank Transfer</h2>
+
+    <p class="description">
+      Thailand ↔ Myanmar bank transfer request.
+      Admin will review your request before processing.
+    </p>
+
+    <div id="accountInfo" class="account-info">
+      Loading account...
+    </div>
+
+    <form id="transferForm">
+
+      <div class="route-box">
+        <strong id="routeText">
+          Loading transfer route...
+        </strong>
+      </div>
+
+      <div class="form-group">
+        <label for="senderCountry">Sending Country</label>
+        <input id="senderCountry" type="text" readonly>
+      </div>
+
+      <div class="form-group">
+        <label for="receiverCountry">Receiving Country</label>
+        <input id="receiverCountry" type="text" readonly>
+      </div>
+
+      <div class="form-group">
+        <label for="bankName">Recipient Bank</label>
+        <select id="bankName" required></select>
+      </div>
+
+      <div class="form-group">
+        <label for="accountNumber">
+          Recipient Bank Account Number
+        </label>
+        <input
+          id="accountNumber"
+          type="text"
+          placeholder="Enter bank account number"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="accountHolder">
+          Account Holder Name
+        </label>
+        <input
+          id="accountHolder"
+          type="text"
+          placeholder="Name registered with the bank"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="recipientPhone">
+          Recipient Phone Number
+        </label>
+        <input
+          id="recipientPhone"
+          type="tel"
+          placeholder="Recipient phone number"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="amount">Sending Amount</label>
+        <input
+          id="amount"
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="Enter sending amount"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="currency">Sending Currency</label>
+        <input id="currency" type="text" readonly>
+      </div>
+
+      <!-- RECEIVE AMOUNT -->
+      <div class="form-group receive-box">
+        <label for="receiveAmount">Receive Amount</label>
+
+        <input
+          id="receiveAmount"
+          type="text"
+          placeholder="Receive amount"
+          readonly
+        >
+
+        <small
+          id="exchangeRateText"
+          class="exchange-text"
+        >
+          Exchange rate will appear here.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="note">
+          Additional Note (Optional)
+        </label>
+
+        <textarea
+          id="note"
+          rows="3"
+          placeholder="Additional information"
+        ></textarea>
+      </div>
+
+      <p class="help-text">
+        Exchange rate and receiving amount are calculated
+        using MYZEN MONEY demo rates. Fees and final payment
+        will be confirmed by the administrator.
+      </p>
+
+      <button
+        type="submit"
+        id="submitBtn"
+        class="submit-btn"
+      >
+        Submit Transfer Request
+      </button>
+
+      <div id="message"></div>
+
+    </form>
+
+  </section>
+
+  <section class="transfer-card">
+
+    <h2>My Transfer Requests</h2>
+
+    <div id="history">
+      Loading transfer history...
+    </div>
+
+  </section>
+
+</main>
+
+<script
+  type="module"
+  src="js/international-transfer.js?v=20261124"
+></script>
+
+</body>
+</html>

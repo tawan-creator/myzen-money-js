@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MYZEN MONEY - Approval Pending</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <h1>MYZEN MONEY</h1>
+
+    <h2 style="text-align:center">Approval Pending</h2>
+
+    <p>
+      Your registration was successful.
+      Your account is waiting for Admin approval.
+    </p>
+
+    <p class="status-pending" style="text-align:center">
+      PENDING REVIEW
+    </p>
+
+    <p class="text-muted">
+      Please check again later after the Admin approves your account.
+    </p>
+
+    <button id="checkApproval" class="btn btn-block">
+      Check Approval Status
+    </button>
+
+    <button id="pendingLogout" class="btn btn-danger btn-block">
+      Logout
+    </button>
+
+    <p id="pendingMessage"></p>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from "./js/firebase.js";
+
+import {
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+import {
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+let currentUser = null;
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  currentUser = user;
+});
+
+document.getElementById("checkApproval").onclick = async () => {
+  if (!currentUser) return;
+
+  const message = document.getElementById("pendingMessage");
+
+  try {
+    const snapshot = await getDoc(
+      doc(db, "users", currentUser.uid)
+    );
+
+    if (!snapshot.exists()) {
+      message.textContent = "Account profile not found.";
+      return;
+    }
+
+    const profile = snapshot.data();
+
+    if (profile.status === "approved") {
+      window.location.href = "dashboard.html";
+    } else {
+      message.textContent = "Your account is still pending.";
+    }
+
+  } catch (error) {
+    message.textContent = error.message;
+  }
+};
+
+document.getElementById("pendingLogout").onclick = async () => {
+  await signOut(auth);
+  window.location.href = "login.html";
+};
+</script>
+
+</body>
+</html>
