@@ -16,6 +16,10 @@ cloudinary.config({
   secure: true
 });
 
+// ==========================================
+// FILE UPLOAD CONFIGURATION
+// ==========================================
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -38,6 +42,10 @@ const upload = multer({
     callback(null, true);
   }
 });
+
+// ==========================================
+// COMMON HELPERS
+// ==========================================
 
 function error(res, status, message) {
   return res.status(status).json({
@@ -113,6 +121,24 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+async function requireApprovedWallet(req, res) {
+  const userSnap = await dbForRequest
+    .collection("users")
+    .doc(req.user.uid)
+    .get();
+
+  if (!userSnap.exists || userSnap.data().status !== "approved") {
+    error(res, 403, "Approved wallet required.");
+    return null;
+  }
+
+  return userSnap.data();
+}
+
+// ==========================================
+// CLOUDINARY - PRIVATE DEPOSIT PROOFS
+// ==========================================
+
 function uploadToCloudinary(buffer, requestId) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -144,6 +170,52 @@ function deleteCloudinaryAsset(publicId) {
   });
 }
 
+// ==========================================
+// CLOUDINARY - PUBLIC PAYMENT QR IMAGES
+// ==========================================
+
+function uploadPaymentQR(buffer, methodId) {
+  const safeId = String(methodId)
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .slice(0, 80);
+
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "image",
+        folder: "myzen-money/payment-qrs",
+        public_id: `qr_${safeId}`,
+        overwrite: true,
+        invalidate: true,
+        allowed_formats: ["jpg", "jpeg", "png", "webp"]
+      },
+      (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      }
+    );
+
+    Readable.from(buffer).pipe(stream);
+  });
+}
+
+// ==========================================
+// EXCHANGE RATE HELPERS
+// ==========================================
+
+function validRate(value) {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value > 0 &&
+    value <= 1000000000
+  );
+}
+
+// ==========================================
+// CREATE ROUTES
+// ==========================================
+
 function createDepositRoutes({
   db,
   FieldValue,
@@ -154,6 +226,10 @@ function createDepositRoutes({
   const settingsRef = db
     .collection("depositSettings")
     .doc("paymentMethods");
+
+  const exchangeRatesRef = db
+    .collection("depositSettings")
+    .doc("exchangeRates");
 
   // ==========================================
   // ADMIN BOOTSTRAP
@@ -228,8 +304,10 @@ function createDepositRoutes({
           .doc(req.user.uid)
           .get();
 
-        if (!userSnap.exists ||
-            userSnap.data().status !== "approved") {
+        if (
+          !userSnap.exists ||
+          userSnap.data().status !== "approved"
+        ) {
           return error(res, 403, "Approved wallet required.");
         }
 
@@ -261,13 +339,58 @@ function createDepositRoutes({
               accountName: m.accountName,
               accountNumber: m.accountNumber,
               bank: m.bank || "",
-              instructions: m.instructions || ""
+              instructions: m.instructions || "",
+              qrUrl: m.qrUrl || ""
             }))
         });
 
       } catch (err) {
         console.error("DEPOSIT METHODS:", err);
         return error(res, 500, "Unable to load payment methods.");
+      }
+    }
+  );
+
+  // ==========================================
+  // PUBLIC EXCHANGE RATES
+  // GET /api/exchange-rates
+  // ==========================================
+
+  router.get(
+    "/exchange-rates",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userSnap = await db
+          .collection("users")
+          .doc(req.user.uid)
+          .get();
+
+        if (
+          !userSnap.exists ||
+          userSnap.data().status !== "approved"
+        ) {
+          return error(res, 403, "Approved wallet required.");
+        }
+
+        const snap = await exchangeRatesRef.get();
+        const data = snap.exists ? snap.data() : {};
+
+        return res.json({
+          success: true,
+          rates: {
+            thbToMmk: validRate(data.thbToMmk)
+              ? data.thbToMmk
+              : null,
+            mmkToThb: validRate(data.mmkToThb)
+              ? data.mmkToThb
+              : null
+          }
+        });
+
+      } catch (err) {
+        console.error("PUBLIC EXCHANGE RATES:", err);
+        return error(res, 500, "Unable to load exchange rates.");
       }
     }
   );
@@ -288,6 +411,7 @@ function createDepositRoutes({
       try {
         const amount = Number(req.body.amount);
         const methodId = String(req.body.methodId || "").trim();
+
         const reference = String(
           req.body.transactionId || ""
         ).trim().slice(0, 100);
@@ -335,6 +459,7 @@ function createDepositRoutes({
         }
 
         const settingsSnap = await settingsRef.get();
+
         const methods = settingsSnap.exists
           ? settingsSnap.data().methods || []
           : [];
@@ -365,7 +490,6 @@ function createDepositRoutes({
           .collection("depositReferences")
           .doc(referenceHash);
 
-        // Upload as an authenticated Cloudinary asset.
         const image = await uploadToCloudinary(
           req.file.buffer,
           requestRef.id
@@ -427,7 +551,11 @@ function createDepositRoutes({
         }
 
         if (err.message === "DUPLICATE_REFERENCE") {
-          return error(res, 409, "This transaction reference was already submitted.");
+          return error(
+            res,
+            409,
+            "This transaction reference was already submitted."
+          );
         }
 
         console.error("CREATE DEPOSIT:", err);
@@ -662,6 +790,7 @@ function createDepositRoutes({
           );
 
           const oldBalance = Number(user.balance || 0);
+
           const oldMinor = currency === "THB"
             ? Math.round(oldBalance * 100)
             : oldBalance;
@@ -847,6 +976,12 @@ function createDepositRoutes({
           return error(res, 400, "Invalid payment methods list.");
         }
 
+        const oldSnap = await settingsRef.get();
+
+        const oldMethods = oldSnap.exists
+          ? oldSnap.data().methods || []
+          : [];
+
         const clean = [];
         const ids = new Set();
 
@@ -856,6 +991,7 @@ function createDepositRoutes({
           const currency = currencyFor(country);
 
           const name = String(method.name || "").trim();
+
           const accountName = String(
             method.accountName || ""
           ).trim();
@@ -885,10 +1021,17 @@ function createDepositRoutes({
             !accountNumber ||
             accountNumber.length > 100
           ) {
-            return error(res, 400, "Invalid payment method configuration.");
+            return error(
+              res,
+              400,
+              "Invalid payment method configuration."
+            );
           }
 
           ids.add(id);
+
+          // Preserve existing QR when editing payment method details.
+          const oldMethod = oldMethods.find(m => m.id === id);
 
           clean.push({
             id,
@@ -899,7 +1042,9 @@ function createDepositRoutes({
             accountNumber,
             instructions,
             bank,
-            enabled: method.enabled === true
+            enabled: method.enabled === true,
+            qrUrl: oldMethod?.qrUrl || "",
+            qrPublicId: oldMethod?.qrPublicId || ""
           });
         }
 
@@ -918,6 +1063,185 @@ function createDepositRoutes({
       } catch (err) {
         console.error("SAVE PAYMENT METHODS:", err);
         return error(res, 500, "Unable to save payment methods.");
+      }
+    }
+  );
+
+  // ==========================================
+  // ADMIN UPLOAD / REPLACE PAYMENT QR
+  // POST /api/admin/deposit/methods/:id/qr
+  // multipart/form-data field: qr
+  // ==========================================
+
+  router.post(
+    "/admin/deposit/methods/:id/qr",
+    requireAuth,
+    requireAdmin,
+    upload.single("qr"),
+    async (req, res) => {
+      try {
+        const methodId = String(req.params.id || "").trim();
+
+        if (!methodId || methodId.length > 100) {
+          return error(res, 400, "Invalid payment method ID.");
+        }
+
+        if (!req.file) {
+          return error(res, 400, "QR image is required.");
+        }
+
+        const snap = await settingsRef.get();
+
+        const methods = snap.exists
+          ? snap.data().methods || []
+          : [];
+
+        const methodIndex = methods.findIndex(
+          m => m.id === methodId
+        );
+
+        if (methodIndex === -1) {
+          return error(res, 404, "Payment method not found.");
+        }
+
+        const image = await uploadPaymentQR(
+          req.file.buffer,
+          methodId
+        );
+
+        const updatedMethods = [...methods];
+
+        updatedMethods[methodIndex] = {
+          ...updatedMethods[methodIndex],
+          qrUrl: image.secure_url,
+          qrPublicId: image.public_id
+        };
+
+        await settingsRef.set(
+          {
+            methods: updatedMethods,
+            updatedAt: FieldValue.serverTimestamp(),
+            updatedBy: req.user.uid
+          },
+          { merge: true }
+        );
+
+        return res.json({
+          success: true,
+          message: "Payment QR uploaded successfully.",
+          methodId,
+          qrUrl: image.secure_url
+        });
+
+      } catch (err) {
+        console.error("UPLOAD PAYMENT QR:", err);
+        return error(res, 500, "Unable to upload payment QR.");
+      }
+    }
+  );
+
+  // ==========================================
+  // ADMIN EXCHANGE RATE MANAGEMENT
+  // GET /api/admin/exchange-rates
+  // ==========================================
+
+  router.get(
+    "/admin/exchange-rates",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const snap = await exchangeRatesRef.get();
+        const data = snap.exists ? snap.data() : {};
+
+        return res.json({
+          success: true,
+          rates: {
+            thbToMmk: validRate(data.thbToMmk)
+              ? data.thbToMmk
+              : null,
+            mmkToThb: validRate(data.mmkToThb)
+              ? data.mmkToThb
+              : null
+          }
+        });
+
+      } catch (err) {
+        console.error("ADMIN EXCHANGE RATES:", err);
+        return error(res, 500, "Unable to load exchange rates.");
+      }
+    }
+  );
+
+  // ==========================================
+  // ADMIN SAVE EXCHANGE RATES
+  // PUT /api/admin/exchange-rates
+  // ==========================================
+
+  router.put(
+    "/admin/exchange-rates",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const body = req.body || {};
+
+        const hasThbRate = Object.prototype.hasOwnProperty.call(
+          body,
+          "thbToMmk"
+        );
+
+        const hasMmkRate = Object.prototype.hasOwnProperty.call(
+          body,
+          "mmkToThb"
+        );
+
+        if (!hasThbRate && !hasMmkRate) {
+          return error(res, 400, "No exchange rate provided.");
+        }
+
+        if (hasThbRate && !validRate(body.thbToMmk)) {
+          return error(res, 400, "Invalid THB to MMK rate.");
+        }
+
+        if (hasMmkRate && !validRate(body.mmkToThb)) {
+          return error(res, 400, "Invalid MMK to THB rate.");
+        }
+
+        const updates = {
+          updatedAt: FieldValue.serverTimestamp(),
+          updatedBy: req.user.uid
+        };
+
+        if (hasThbRate) {
+          updates.thbToMmk = body.thbToMmk;
+        }
+
+        if (hasMmkRate) {
+          updates.mmkToThb = body.mmkToThb;
+        }
+
+        await exchangeRatesRef.set(updates, { merge: true });
+
+        const savedSnap = await exchangeRatesRef.get();
+        const saved = savedSnap.data() || {};
+
+        return res.json({
+          success: true,
+          message: "Exchange rates saved.",
+          rates: {
+            thbToMmk: validRate(saved.thbToMmk)
+              ? saved.thbToMmk
+              : null,
+            mmkToThb: validRate(saved.mmkToThb)
+              ? saved.mmkToThb
+              : null
+          }
+        });
+
+      } catch (err) {
+        console.error("SAVE EXCHANGE RATES:", err);
+        return error(res, 500, "Unable to save exchange rates.");
       }
     }
   );
