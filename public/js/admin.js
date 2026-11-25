@@ -74,6 +74,7 @@ let depositRecords = [];
 let internationalTransferRecords = [];
 let userRecords = [];
 let currentQrPreviewUrl = null;
+let authReady = false;
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -85,40 +86,74 @@ function escapeHTML(value) {
   })[char]);
 }
 
+function setMessage(element, message, type = "") {
+  if (!element) return;
+
+  element.textContent = message;
+  element.className = `message ${type}`;
+}
+
 function setAdminMessage(message, type = "") {
-  if (!els.message) return;
-  els.message.textContent = message;
-  els.message.className = `message ${type}`;
+  setMessage(els.message, message, type);
 }
 
 function setMethodMessage(message, type = "") {
-  if (!els.methodMessage) return;
-  els.methodMessage.textContent = message;
-  els.methodMessage.className = `message ${type}`;
+  setMessage(els.methodMessage, message, type);
 }
 
 function setQrMessage(message, type = "") {
-  if (!els.qrMessage) return;
-  els.qrMessage.textContent = message;
-  els.qrMessage.className = `message ${type}`;
+  setMessage(els.qrMessage, message, type);
 }
 
 function setRateMessage(message, type = "") {
-  if (!els.rateMessage) return;
-  els.rateMessage.textContent = message;
-  els.rateMessage.className = `message ${type}`;
+  setMessage(els.rateMessage, message, type);
 }
 
 function setTransferMessage(message, type = "") {
-  if (!els.internationalTransferMessage) return;
-  els.internationalTransferMessage.textContent = message;
-  els.internationalTransferMessage.className = `message ${type}`;
+  setMessage(els.internationalTransferMessage, message, type);
 }
 
 function setUserMessage(message, type = "") {
-  if (!els.userMessage) return;
-  els.userMessage.textContent = message;
-  els.userMessage.className = `message ${type}`;
+  setMessage(els.userMessage, message, type);
+}
+
+function formatDate(value) {
+  if (!value) return "Date unavailable";
+
+  let date;
+
+  if (typeof value === "string" || typeof value === "number") {
+    date = new Date(value);
+  } else if (typeof value.toDate === "function") {
+    date = value.toDate();
+  } else if (typeof value.seconds === "number") {
+    date = new Date(value.seconds * 1000);
+  } else {
+    return "Date unavailable";
+  }
+
+  return Number.isNaN(date.getTime())
+    ? "Date unavailable"
+    : date.toLocaleString();
+}
+
+function formatMoney(value, currency = "THB") {
+  const amount = Number(value || 0);
+
+  if (!Number.isFinite(amount)) return `0 ${currency}`;
+
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: currency === "THB" ? 2 : 0,
+    maximumFractionDigits: currency === "THB" ? 2 : 0
+  }).format(amount) + " " + currency;
+}
+
+function getStatus(value) {
+  const status = String(value || "pending").toLowerCase();
+
+  return ["approved", "pending", "rejected"].includes(status)
+    ? status
+    : "unknown";
 }
 
 async function apiRequest(endpoint, options = {}) {
@@ -155,32 +190,9 @@ async function apiRequest(endpoint, options = {}) {
   return data;
 }
 
-function formatDate(value) {
-  if (!value) return "Date unavailable";
-
-  let date;
-
-  if (typeof value === "string" || typeof value === "number") {
-    date = new Date(value);
-  } else if (value.seconds) {
-    date = new Date(value.seconds * 1000);
-  } else {
-    return "Date unavailable";
-  }
-
-  return Number.isNaN(date.getTime())
-    ? "Date unavailable"
-    : date.toLocaleString();
-}
-
-function formatMoney(value, currency = "THB") {
-  const amount = Number(value || 0);
-
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: currency === "THB" ? 2 : 0,
-    maximumFractionDigits: currency === "THB" ? 2 : 0
-  }).format(amount) + " " + currency;
-}
+/* =====================================
+   DASHBOARD STATISTICS
+===================================== */
 
 function updateStats() {
   const total = depositRecords.length;
@@ -202,10 +214,6 @@ function updateStats() {
   if (els.statApproved) els.statApproved.textContent = approved;
   if (els.statMethods) els.statMethods.textContent = activeMethods;
 }
-
-/* =====================================
-   USER MANAGEMENT
-===================================== */
 
 function updateUserStats(stats = {}) {
   const approved = userRecords.filter(
@@ -237,6 +245,10 @@ function updateUserStats(stats = {}) {
   }
 }
 
+/* =====================================
+   USER MANAGEMENT
+===================================== */
+
 function renderUsers() {
   if (!els.userList) return;
 
@@ -264,16 +276,7 @@ function renderUsers() {
   }
 
   els.userList.innerHTML = filtered.map(user => {
-    const status = String(
-      user.status || "pending"
-    ).toLowerCase();
-
-    const safeStatus = [
-      "approved",
-      "pending",
-      "rejected"
-    ].includes(status) ? status : "unknown";
-
+    const status = getStatus(user.status);
     const online = user.online === true;
 
     return `
@@ -282,8 +285,8 @@ function renderUsers() {
         <div class="method-row">
           <h3>${escapeHTML(user.name || "Unnamed User")}</h3>
 
-          <span class="status ${escapeHTML(safeStatus)}">
-            ${escapeHTML(safeStatus)}
+          <span class="status ${status}">
+            ${status}
           </span>
         </div>
 
@@ -299,7 +302,7 @@ function renderUsers() {
 
         <p>
           <strong>Account Status:</strong>
-          ${escapeHTML(safeStatus)}
+          ${status}
         </p>
 
         <p>
@@ -380,7 +383,7 @@ async function approveUser(uid, button) {
     return;
   }
 
-  if (String(user.status).toLowerCase() !== "pending") {
+  if (String(user.status || "").toLowerCase() !== "pending") {
     alert("This user is not pending approval.");
     return;
   }
@@ -441,9 +444,9 @@ async function loadDeposits() {
       els.deposits.innerHTML =
         '<div class="empty">No deposit requests found.</div>';
     } else {
-      els.deposits.innerHTML = depositRecords.map((item) => {
+      els.deposits.innerHTML = depositRecords.map(item => {
         const id = escapeHTML(item.id);
-        const status = String(item.status || "pending").toLowerCase();
+        const status = getStatus(item.status);
 
         return `
           <article class="deposit-item">
@@ -451,33 +454,36 @@ async function loadDeposits() {
             <div class="method-row">
               <h3>Deposit ${id}</h3>
 
-              <span class="status ${escapeHTML(status)}">
-                ${escapeHTML(status)}
+              <span class="status ${status}">
+                ${status}
               </span>
             </div>
 
-            <p><strong>User ID:</strong> ${escapeHTML(item.uid || "")}</p>
+            <p><strong>User ID:</strong>
+              ${escapeHTML(item.uid || "-")}
+            </p>
 
             <p><strong>Amount:</strong>
               ${escapeHTML(formatMoney(item.amount, item.currency || "THB"))}
             </p>
 
             <p><strong>Payment Method:</strong>
-              ${escapeHTML(item.methodName || "")}
+              ${escapeHTML(item.methodName || "-")}
             </p>
 
             <p><strong>Transaction Reference:</strong>
-              ${escapeHTML(item.transactionId || "")}
+              ${escapeHTML(item.transactionId || "-")}
             </p>
 
             <p><strong>Submitted:</strong>
               ${escapeHTML(formatDate(item.createdAt))}
             </p>
 
-            ${item.note
-              ? `<p><strong>Note:</strong> ${escapeHTML(item.note)}</p>`
-              : ""
-            }
+            ${item.note ? `
+              <p><strong>Note:</strong>
+                ${escapeHTML(item.note)}
+              </p>
+            ` : ""}
 
             <div class="actions">
 
@@ -515,9 +521,13 @@ async function loadDeposits() {
     }
 
     updateStats();
+
   } catch (error) {
-    els.deposits.innerHTML =
-      `<div class="message error">${escapeHTML(error.message)}</div>`;
+    els.deposits.innerHTML = `
+      <div class="message error">
+        ${escapeHTML(error.message)}
+      </div>
+    `;
 
     updateStats();
     throw error;
@@ -545,13 +555,17 @@ async function viewProof(id, button) {
 
     const container = $(`proof-${id}`);
 
-    if (!container) throw new Error("Proof container not found.");
+    if (!container) {
+      throw new Error("Proof container not found.");
+    }
+
+    const safeUrl = escapeHTML(proofUrl);
 
     container.innerHTML = `
       <p><strong>Payment Screenshot</strong></p>
 
       <a
-        href="${escapeHTML(proofUrl)}"
+        href="${safeUrl}"
         target="_blank"
         rel="noopener noreferrer">
         Open full-size screenshot
@@ -559,16 +573,16 @@ async function viewProof(id, button) {
 
       <img
         class="proof-image"
-        src="${escapeHTML(proofUrl)}"
+        src="${safeUrl}"
         alt="Payment proof">
     `;
-  } catch (error) {
-    const message = $(`deposit-message-${id}`);
 
-    if (message) {
-      message.textContent = error.message;
-      message.className = "message error";
-    }
+  } catch (error) {
+    setMessage(
+      $(`deposit-message-${id}`),
+      error.message,
+      "error"
+    );
   } finally {
     button.disabled = false;
     button.textContent = "View Payment Proof";
@@ -577,7 +591,8 @@ async function viewProof(id, button) {
 
 async function approveDeposit(id, button) {
   const confirmed = confirm(
-    "Have you verified that the money was actually received in your account? Approve and credit this deposit?"
+    "Have you verified that the money was actually received?\n\n" +
+    "Approving this deposit will credit the user's wallet."
   );
 
   if (!confirmed) return;
@@ -591,21 +606,20 @@ async function approveDeposit(id, button) {
       { method: "POST" }
     );
 
-    const message = $(`deposit-message-${id}`);
-
-    if (message) {
-      message.textContent = data.message || "Deposit approved.";
-      message.className = "message ok";
-    }
+    setMessage(
+      $(`deposit-message-${id}`),
+      data.message || "Deposit approved.",
+      "ok"
+    );
 
     await loadDeposits();
-  } catch (error) {
-    const message = $(`deposit-message-${id}`);
 
-    if (message) {
-      message.textContent = error.message;
-      message.className = "message error";
-    }
+  } catch (error) {
+    setMessage(
+      $(`deposit-message-${id}`),
+      error.message,
+      "error"
+    );
 
     button.disabled = false;
     button.textContent = "Approve";
@@ -635,21 +649,20 @@ async function rejectDeposit(id, button) {
       }
     );
 
-    const message = $(`deposit-message-${id}`);
-
-    if (message) {
-      message.textContent = data.message || "Deposit rejected.";
-      message.className = "message ok";
-    }
+    setMessage(
+      $(`deposit-message-${id}`),
+      data.message || "Deposit rejected.",
+      "ok"
+    );
 
     await loadDeposits();
-  } catch (error) {
-    const message = $(`deposit-message-${id}`);
 
-    if (message) {
-      message.textContent = error.message;
-      message.className = "message error";
-    }
+  } catch (error) {
+    setMessage(
+      $(`deposit-message-${id}`),
+      error.message,
+      "error"
+    );
 
     button.disabled = false;
     button.textContent = "Reject";
@@ -657,7 +670,7 @@ async function rejectDeposit(id, button) {
 }
 
 /* =====================================
-   INTERNATIONAL TRANSFER MANAGEMENT
+   INTERNATIONAL TRANSFERS
 ===================================== */
 
 async function loadInternationalTransfers() {
@@ -687,9 +700,9 @@ async function loadInternationalTransfers() {
     }
 
     els.internationalTransfers.innerHTML =
-      internationalTransferRecords.map((item) => {
+      internationalTransferRecords.map(item => {
         const id = escapeHTML(item.id);
-        const status = String(item.status || "pending").toLowerCase();
+        const status = getStatus(item.status);
 
         const sendCurrency = item.sendCurrency || "THB";
         const receiveCurrency = item.receiveCurrency || "MMK";
@@ -700,8 +713,8 @@ async function loadInternationalTransfers() {
             <div class="method-row">
               <h3>International Transfer</h3>
 
-              <span class="status ${escapeHTML(status)}">
-                ${escapeHTML(status)}
+              <span class="status ${status}">
+                ${status}
               </span>
             </div>
 
@@ -788,6 +801,7 @@ async function loadInternationalTransfers() {
 
             ${status === "pending" ? `
               <div class="transfer-actions">
+
                 <button
                   class="success transfer-approve-btn"
                   type="button"
@@ -801,6 +815,7 @@ async function loadInternationalTransfers() {
                   data-id="${id}">
                   Reject & Refund
                 </button>
+
               </div>
             ` : ""}
 
@@ -838,10 +853,9 @@ async function approveInternationalTransfer(id, button) {
   }
 
   const confirmed = confirm(
-    "IMPORTANT: Have you manually completed the external bank payout to the recipient?\n\n" +
-    "Approving this request only changes its status to Approved.\n" +
-    "It does NOT send money to the recipient's wallet or bank.\n\n" +
-    "Only continue if the external payout has actually been completed."
+    "IMPORTANT:\n\n" +
+    "Have you actually completed the external bank payout?\n\n" +
+    "This approval changes the transfer status. It does not itself send money to a bank."
   );
 
   if (!confirmed) return;
@@ -863,12 +877,11 @@ async function approveInternationalTransfer(id, button) {
     await loadInternationalTransfers();
 
   } catch (error) {
-    const message = $(`transfer-message-${id}`);
-
-    if (message) {
-      message.textContent = error.message;
-      message.className = "message error";
-    }
+    setMessage(
+      $(`transfer-message-${id}`),
+      error.message,
+      "error"
+    );
 
     button.disabled = false;
     button.textContent = "Approve Transfer";
@@ -897,11 +910,9 @@ async function rejectInternationalTransfer(id, button) {
   }
 
   const confirmed = confirm(
-    "Are you sure you want to reject this transfer?\n\n" +
-    "The backend will automatically refund " +
-    formatMoney(transfer.sendAmount, transfer.sendCurrency) +
-    " to the sender's wallet.\n\n" +
-    "The refund will be processed exactly once."
+    "Reject this transfer and request a backend refund?\n\n" +
+    `Amount: ${formatMoney(transfer.sendAmount, transfer.sendCurrency)}\n\n` +
+    "Continue only if you have verified the request."
   );
 
   if (!confirmed) return;
@@ -920,19 +931,18 @@ async function rejectInternationalTransfer(id, button) {
     );
 
     setTransferMessage(
-      data.message || "Transfer rejected and sender refunded.",
+      data.message || "Transfer rejected. Check the backend refund result.",
       "ok"
     );
 
     await loadInternationalTransfers();
 
   } catch (error) {
-    const message = $(`transfer-message-${id}`);
-
-    if (message) {
-      message.textContent = error.message;
-      message.className = "message error";
-    }
+    setMessage(
+      $(`transfer-message-${id}`),
+      error.message,
+      "error"
+    );
 
     button.disabled = false;
     button.textContent = "Reject & Refund";
@@ -940,7 +950,7 @@ async function rejectInternationalTransfer(id, button) {
 }
 
 /* =====================================
-   PAYMENT METHOD MANAGEMENT
+   PAYMENT METHODS
 ===================================== */
 
 function renderQrPreview(url) {
@@ -952,13 +962,67 @@ function renderQrPreview(url) {
   }
 
   if (!url) {
-    els.qrPreview.src = "";
+    els.qrPreview.removeAttribute("src");
     els.qrPreview.classList.add("hidden");
     return;
   }
 
   els.qrPreview.src = url;
   els.qrPreview.classList.remove("hidden");
+}
+
+function clearMethodForm() {
+  if (!els.methodForm) return;
+
+  els.methodForm.reset();
+
+  if (els.methodId) els.methodId.value = "";
+  if (els.enabled) els.enabled.checked = true;
+  if (els.qrFile) els.qrFile.value = "";
+
+  renderQrPreview("");
+
+  setQrMessage("");
+  setMethodMessage("");
+
+  if (els.saveMethod) {
+    els.saveMethod.textContent = "Save Payment Method";
+  }
+}
+
+function editMethod(id) {
+  const method = configuredMethods.find(item => item.id === id);
+
+  if (!method) return;
+
+  els.methodId.value = method.id;
+  els.country.value = method.country || "Thailand";
+  els.currency.value = method.currency || "THB";
+  els.name.value = method.name || "";
+  els.bank.value = method.bank || "";
+  els.accountName.value = method.accountName || "";
+  els.accountNumber.value = method.accountNumber || "";
+  els.instructions.value = method.instructions || "";
+  els.enabled.checked = method.enabled === true;
+
+  if (els.qrFile) els.qrFile.value = "";
+
+  els.saveMethod.textContent = "Update Payment Method";
+
+  renderQrPreview(method.qrUrl || "");
+
+  setQrMessage(
+    method.qrUrl
+      ? "Current QR image loaded."
+      : "No QR image uploaded."
+  );
+
+  setMethodMessage(`Editing: ${method.name}`, "ok");
+
+  els.methodForm.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
 }
 
 async function loadPaymentMethods() {
@@ -977,7 +1041,7 @@ async function loadPaymentMethods() {
       els.methods.innerHTML =
         '<div class="empty">No payment methods configured yet.</div>';
     } else {
-      els.methods.innerHTML = configuredMethods.map((method) => `
+      els.methods.innerHTML = configuredMethods.map(method => `
         <div class="method-item">
 
           <div class="method-row">
@@ -997,11 +1061,11 @@ async function loadPaymentMethods() {
           </p>
 
           <p><strong>Account Name:</strong>
-            ${escapeHTML(method.accountName || "")}
+            ${escapeHTML(method.accountName || "-")}
           </p>
 
           <p><strong>Account Number:</strong>
-            ${escapeHTML(method.accountNumber || "")}
+            ${escapeHTML(method.accountNumber || "-")}
           </p>
 
           <p><strong>Instructions:</strong>
@@ -1019,6 +1083,7 @@ async function loadPaymentMethods() {
           `}
 
           <div class="actions">
+
             <button
               class="secondary edit-method-btn"
               type="button"
@@ -1032,73 +1097,24 @@ async function loadPaymentMethods() {
               data-id="${escapeHTML(method.id)}">
               ${method.enabled ? "Disable" : "Enable"}
             </button>
-          </div>
 
+          </div>
         </div>
       `).join("");
     }
 
     updateStats();
+
   } catch (error) {
-    els.methods.innerHTML =
-      `<div class="message error">${escapeHTML(error.message)}</div>`;
+    els.methods.innerHTML = `
+      <div class="message error">
+        ${escapeHTML(error.message)}
+      </div>
+    `;
 
     updateStats();
     throw error;
   }
-}
-
-function clearMethodForm() {
-  if (!els.methodForm) return;
-
-  els.methodForm.reset();
-
-  els.methodId.value = "";
-  els.enabled.checked = true;
-
-  if (els.qrFile) els.qrFile.value = "";
-
-  renderQrPreview("");
-
-  setQrMessage("");
-  setMethodMessage("");
-
-  els.saveMethod.textContent = "Save Payment Method";
-}
-
-function editMethod(id) {
-  const method = configuredMethods.find(item => item.id === id);
-
-  if (!method) return;
-
-  els.methodId.value = method.id;
-  els.country.value = method.country || "Thailand";
-  els.currency.value = method.currency || "THB";
-  els.name.value = method.name || "";
-  els.bank.value = method.bank || "";
-  els.accountName.value = method.accountName || "";
-  els.accountNumber.value = method.accountNumber || "";
-  els.instructions.value = method.instructions || "";
-  els.enabled.checked = method.enabled === true;
-
-  els.saveMethod.textContent = "Update Payment Method";
-
-  if (els.qrFile) els.qrFile.value = "";
-
-  renderQrPreview(method.qrUrl || "");
-
-  setQrMessage(
-    method.qrUrl
-      ? "Current QR image loaded."
-      : "No QR image uploaded for this method."
-  );
-
-  setMethodMessage(`Editing: ${method.name}`, "ok");
-
-  window.scrollTo({
-    top: els.methodForm.getBoundingClientRect().top + window.scrollY,
-    behavior: "smooth"
-  });
 }
 
 async function savePaymentMethods() {
@@ -1118,19 +1134,19 @@ async function savePaymentMethods() {
 
   if (!method.name || !method.accountName || !method.accountNumber) {
     throw new Error(
-      "Please fill in the payment method, account name, and account number."
+      "Please fill in payment method, account name, and account number."
     );
   }
 
   const updatedMethods = [...configuredMethods];
 
-  const existingIndex = updatedMethods.findIndex(
+  const index = updatedMethods.findIndex(
     item => item.id === method.id
   );
 
-  if (existingIndex >= 0) {
-    updatedMethods[existingIndex] = {
-      ...updatedMethods[existingIndex],
+  if (index >= 0) {
+    updatedMethods[index] = {
+      ...updatedMethods[index],
       ...method
     };
   } else {
@@ -1144,13 +1160,9 @@ async function savePaymentMethods() {
   });
 
   await loadPaymentMethods();
-
   clearMethodForm();
 
-  setMethodMessage(
-    "Payment methods saved successfully. Select Edit / Manage QR to upload a QR image.",
-    "ok"
-  );
+  setMethodMessage("Payment methods saved successfully.", "ok");
 }
 
 async function toggleMethod(id) {
@@ -1182,7 +1194,7 @@ async function uploadPaymentQr() {
 
   if (!methodId) {
     throw new Error(
-      "Please save the payment method first, then click Edit / Manage QR."
+      "Save the payment method first, then click Edit / Manage QR."
     );
   }
 
@@ -1222,7 +1234,9 @@ async function uploadPaymentQr() {
   );
 
   if (updatedMethod) {
-    renderQrPreview(updatedMethod.qrUrl || data.qrUrl || data.url || "");
+    renderQrPreview(
+      updatedMethod.qrUrl || data.qrUrl || data.url || ""
+    );
   }
 
   els.qrFile.value = "";
@@ -1253,9 +1267,7 @@ function displayRate(value) {
 
   const number = Number(value);
 
-  if (!Number.isFinite(number)) {
-    return "Not set";
-  }
+  if (!Number.isFinite(number)) return "Not set";
 
   return number.toLocaleString("en-US", {
     maximumFractionDigits: 8
@@ -1263,6 +1275,8 @@ function displayRate(value) {
 }
 
 async function loadExchangeRates() {
+  if (!els.thbRateCurrent || !els.mmkRateCurrent) return;
+
   setRateMessage("Loading exchange rates...");
 
   try {
@@ -1278,10 +1292,16 @@ async function loadExchangeRates() {
     els.mmkRateCurrent.textContent =
       `Current rate: 1 MMK = ${displayRate(mmkRate)} THB`;
 
-    els.thbToMmk.value = thbRate === null ? "" : thbRate;
-    els.mmkToThb.value = mmkRate === null ? "" : mmkRate;
+    if (els.thbToMmk) {
+      els.thbToMmk.value = thbRate === null ? "" : thbRate;
+    }
+
+    if (els.mmkToThb) {
+      els.mmkToThb.value = mmkRate === null ? "" : mmkRate;
+    }
 
     setRateMessage("Exchange rates loaded.", "ok");
+
   } catch (error) {
     setRateMessage(
       `Unable to load exchange rates: ${error.message}`,
@@ -1293,6 +1313,8 @@ async function loadExchangeRates() {
 }
 
 async function saveExchangeRate(field, input, button, label) {
+  if (!input || !button) return;
+
   const value = Number(input.value);
 
   if (
@@ -1326,10 +1348,8 @@ async function saveExchangeRate(field, input, button, label) {
 
     await loadExchangeRates();
 
-    setRateMessage(
-      `${label} rate saved successfully.`,
-      "ok"
-    );
+    setRateMessage(`${label} rate saved successfully.`, "ok");
+
   } catch (error) {
     setRateMessage(
       `Unable to save ${label} rate: ${error.message}`,
@@ -1346,7 +1366,7 @@ async function saveExchangeRate(field, input, button, label) {
 ===================================== */
 
 if (els.deposits) {
-  els.deposits.addEventListener("click", async (event) => {
+  els.deposits.addEventListener("click", async event => {
     const button = event.target.closest("button");
     if (!button) return;
 
@@ -1364,7 +1384,7 @@ if (els.deposits) {
 }
 
 if (els.userList) {
-  els.userList.addEventListener("click", async (event) => {
+  els.userList.addEventListener("click", async event => {
     const button = event.target.closest(".user-approve-btn");
     if (!button) return;
 
@@ -1376,7 +1396,7 @@ if (els.userList) {
 }
 
 if (els.internationalTransfers) {
-  els.internationalTransfers.addEventListener("click", async (event) => {
+  els.internationalTransfers.addEventListener("click", async event => {
     const button = event.target.closest("button");
     if (!button) return;
 
@@ -1394,7 +1414,6 @@ if (els.internationalTransfers) {
 if (els.refreshInternationalTransfers) {
   els.refreshInternationalTransfers.addEventListener("click", async () => {
     els.refreshInternationalTransfers.disabled = true;
-    els.refreshInternationalTransfers.textContent = "Refreshing...";
 
     try {
       await loadInternationalTransfers();
@@ -1408,7 +1427,7 @@ if (els.refreshInternationalTransfers) {
 }
 
 if (els.methods) {
-  els.methods.addEventListener("click", async (event) => {
+  els.methods.addEventListener("click", async event => {
     const button = event.target.closest("button");
     if (!button) return;
 
@@ -1434,22 +1453,25 @@ if (els.methods) {
 }
 
 if (els.methodForm) {
-  els.methodForm.addEventListener("submit", async (event) => {
+  els.methodForm.addEventListener("submit", async event => {
     event.preventDefault();
 
-    els.saveMethod.disabled = true;
-    els.saveMethod.textContent = "Saving...";
+    if (els.saveMethod) {
+      els.saveMethod.disabled = true;
+      els.saveMethod.textContent = "Saving...";
+    }
 
     try {
       await savePaymentMethods();
     } catch (error) {
       setMethodMessage(error.message, "error");
     } finally {
-      els.saveMethod.disabled = false;
-
-      els.saveMethod.textContent = els.methodId.value
-        ? "Update Payment Method"
-        : "Save Payment Method";
+      if (els.saveMethod) {
+        els.saveMethod.disabled = false;
+        els.saveMethod.textContent = els.methodId.value
+          ? "Update Payment Method"
+          : "Save Payment Method";
+      }
     }
   });
 }
@@ -1501,8 +1523,10 @@ if (els.qrFile) {
 
     currentQrPreviewUrl = URL.createObjectURL(file);
 
-    els.qrPreview.src = currentQrPreviewUrl;
-    els.qrPreview.classList.remove("hidden");
+    if (els.qrPreview) {
+      els.qrPreview.src = currentQrPreviewUrl;
+      els.qrPreview.classList.remove("hidden");
+    }
 
     setQrMessage("Image selected. Click Upload / Replace QR Image.");
   });
@@ -1585,13 +1609,13 @@ if (els.logout) {
     try {
       await signOut(auth);
       window.location.href = "login.html";
-    } catch {
-      alert("Unable to log out.");
+    } catch (error) {
+      alert(`Unable to log out: ${error.message}`);
     }
   });
 }
 
-if (els.country) {
+if (els.country && els.currency) {
   els.country.addEventListener("change", () => {
     els.currency.value =
       els.country.value === "Myanmar" ? "MMK" : "THB";
@@ -1602,26 +1626,20 @@ if (els.country) {
    ADMIN AUTHENTICATION
 ===================================== */
 
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, async user => {
   if (!user) {
+    currentUser = null;
     window.location.href = "login.html";
     return;
   }
 
   currentUser = user;
 
+  if (authReady) return;
+  authReady = true;
+
   try {
     const tokenResult = await user.getIdTokenResult(true);
-
-    if (tokenResult.claims.admin !== true) {
-      setAdminMessage(
-        "Admin permission required. This account does not currently have Admin permission.",
-        "error"
-      );
-
-      els.dashboard?.classList.add("hidden");
-      return;
-    }
 
     if (
       String(user.email || "").toLowerCase() !==
@@ -1629,6 +1647,16 @@ onAuthStateChanged(auth, async (user) => {
     ) {
       setAdminMessage(
         "This account is not the configured MYZEN MONEY administrator.",
+        "error"
+      );
+
+      els.dashboard?.classList.add("hidden");
+      return;
+    }
+
+    if (tokenResult.claims.admin !== true) {
+      setAdminMessage(
+        "Admin permission required. The administrator account needs the admin: true custom claim.",
         "error"
       );
 
@@ -1651,9 +1679,13 @@ onAuthStateChanged(auth, async (user) => {
       loadUsers()
     ]);
 
-    if (results.some(result => result.status === "rejected")) {
+    const failed = results.filter(
+      result => result.status === "rejected"
+    );
+
+    if (failed.length) {
       setAdminMessage(
-        "Admin access confirmed. Some dashboard data could not load. Check the error shown in each section.",
+        `Admin access confirmed. ${failed.length} dashboard section(s) failed to load. Check each section for its error.`,
         "error"
       );
     }
