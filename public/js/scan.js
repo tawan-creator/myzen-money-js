@@ -16,53 +16,28 @@ const API_BASE_URL = "https://myzen-money-js.onrender.com";
 // HTML ELEMENTS
 // ==========================================
 
-const accountCountryEl =
-  document.getElementById("accountCountry");
+const accountCountryEl = document.getElementById("accountCountry");
+const accountCurrencyEl = document.getElementById("accountCurrency");
 
-const accountCurrencyEl =
-  document.getElementById("accountCurrency");
+const startScanBtn = document.getElementById("startScan");
+const stopScanBtn = document.getElementById("stopScan");
 
-const startScanBtn =
-  document.getElementById("startScan");
+const receiveCodeInput = document.getElementById("receiveCodeInput");
+const lookupCodeBtn = document.getElementById("lookupCodeButton");
 
-const stopScanBtn =
-  document.getElementById("stopScan");
+const scanMessage = document.getElementById("scanMessage");
 
-const receiveCodeInput =
-  document.getElementById("receiveCodeInput");
+const recipientInfo = document.getElementById("recipientInfo");
+const recipientName = document.getElementById("recipientName");
+const recipientCountry = document.getElementById("recipientCountry");
+const recipientUid = document.getElementById("recipientUid");
 
-const lookupCodeBtn =
-  document.getElementById("lookupCodeButton");
+const qrTransferForm = document.getElementById("qrTransferForm");
+const qrAmount = document.getElementById("qrAmount");
+const qrCurrency = document.getElementById("qrCurrency");
+const qrNote = document.getElementById("qrNote");
 
-const scanMessage =
-  document.getElementById("scanMessage");
-
-const recipientInfo =
-  document.getElementById("recipientInfo");
-
-const recipientName =
-  document.getElementById("recipientName");
-
-const recipientCountry =
-  document.getElementById("recipientCountry");
-
-const recipientUid =
-  document.getElementById("recipientUid");
-
-const qrTransferForm =
-  document.getElementById("qrTransferForm");
-
-const qrAmount =
-  document.getElementById("qrAmount");
-
-const qrCurrency =
-  document.getElementById("qrCurrency");
-
-const qrNote =
-  document.getElementById("qrNote");
-
-const submitQrTransfer =
-  document.getElementById("submitQrTransfer");
+const submitQrTransfer = document.getElementById("submitQrTransfer");
 
 // ==========================================
 // APPLICATION STATE
@@ -83,10 +58,7 @@ let isLookingUp = false;
 // ==========================================
 
 function normalizeCountry(value) {
-
-  const country = String(value || "")
-    .trim()
-    .toLowerCase();
+  const country = String(value || "").trim().toLowerCase();
 
   if (
     country === "thailand" ||
@@ -110,11 +82,8 @@ function normalizeCountry(value) {
 }
 
 function getCurrency(country) {
-
   if (country === "Thailand") return "THB";
-
   if (country === "Myanmar") return "MMK";
-
   return "";
 }
 
@@ -123,22 +92,16 @@ function getCurrency(country) {
 // ==========================================
 
 function showMessage(message, type = "info") {
-
   if (!scanMessage) return;
 
   scanMessage.textContent = message;
   scanMessage.style.display = "block";
 
   if (type === "error") {
-
     scanMessage.style.color = "#dc2626";
-
   } else if (type === "success") {
-
     scanMessage.style.color = "#16a34a";
-
   } else {
-
     scanMessage.style.color = "#2563eb";
   }
 }
@@ -148,28 +111,17 @@ function showMessage(message, type = "info") {
 // ==========================================
 
 function isGPSValid() {
-
   const location = window.MYZEN_LOCATION;
 
   if (!location || location.ready !== true) {
     return false;
   }
 
-  const gpsCountry = normalizeCountry(
-    location.country
-  );
+  const gpsCountry = normalizeCountry(location.country);
+  const gpsCurrency = String(location.currency || "").toUpperCase();
 
-  const gpsCurrency = String(
-    location.currency || ""
-  ).toUpperCase();
-
-  const accountCountry = normalizeCountry(
-    currentProfile?.country
-  );
-
-  const expectedCurrency = getCurrency(
-    accountCountry
-  );
+  const accountCountry = normalizeCountry(currentProfile?.country);
+  const expectedCurrency = getCurrency(accountCountry);
 
   return Boolean(
     gpsCountry &&
@@ -181,42 +133,27 @@ function isGPSValid() {
 }
 
 function checkGPS() {
-
   const location = window.MYZEN_LOCATION;
 
   if (!location || location.ready !== true) {
-
     showMessage(
       "GPS location is required. Please allow GPS access.",
       "error"
     );
-
     return false;
   }
 
-  const gpsCountry = normalizeCountry(
-    location.country
-  );
+  const gpsCountry = normalizeCountry(location.country);
+  const gpsCurrency = String(location.currency || "").toUpperCase();
 
-  const gpsCurrency = String(
-    location.currency || ""
-  ).toUpperCase();
-
-  const accountCountry = normalizeCountry(
-    currentProfile?.country
-  );
-
-  const expectedCurrency = getCurrency(
-    accountCountry
-  );
+  const accountCountry = normalizeCountry(currentProfile?.country);
+  const expectedCurrency = getCurrency(accountCountry);
 
   if (!gpsCountry || !gpsCurrency) {
-
     showMessage(
       "Unable to verify your GPS location.",
       "error"
     );
-
     return false;
   }
 
@@ -225,12 +162,10 @@ function checkGPS() {
     gpsCountry !== accountCountry ||
     gpsCurrency !== expectedCurrency
   ) {
-
     showMessage(
       "Your GPS country does not match your wallet country.",
       "error"
     );
-
     return false;
   }
 
@@ -242,7 +177,6 @@ function checkGPS() {
 // ==========================================
 
 function isValidTransferAmount() {
-
   const amount = Number(qrAmount?.value);
 
   const currency = String(
@@ -258,10 +192,39 @@ function isValidTransferAmount() {
   }
 
   if (currency === "THB") {
-    return Number.isInteger(amount * 100);
+    return Number.isInteger(Math.round(amount * 100));
   }
 
   return false;
+}
+
+// ==========================================
+// DEBUG STATE
+// ==========================================
+
+function getButtonDebugState() {
+  return {
+    userExists: Boolean(currentUser),
+    userUid: currentUser?.uid || null,
+
+    profileExists: Boolean(currentProfile),
+    profileStatus: currentProfile?.status || null,
+    profileCountry: currentProfile?.country || null,
+
+    normalizedProfileCountry: normalizeCountry(
+      currentProfile?.country
+    ),
+
+    gps: window.MYZEN_LOCATION || null,
+    gpsValid: isGPSValid(),
+
+    recipientExists: Boolean(currentRecipient),
+    amountValid: isValidTransferAmount(),
+
+    scanning: isScanning,
+    submitting: isSubmitting,
+    lookingUp: isLookingUp
+  };
 }
 
 // ==========================================
@@ -269,17 +232,19 @@ function isValidTransferAmount() {
 // ==========================================
 
 function updateScannerButtons() {
+  const approved =
+    String(currentProfile?.status || "")
+      .trim()
+      .toLowerCase() === "approved";
 
-  const canScan =
-    Boolean(
-      currentUser &&
-      currentProfile &&
-      String(currentProfile.status || "").toLowerCase() === "approved" &&
-      isGPSValid()
-    );
+  const canScan = Boolean(
+    currentUser &&
+    currentProfile &&
+    approved &&
+    isGPSValid()
+  );
 
   if (startScanBtn) {
-
     startScanBtn.disabled =
       !canScan ||
       isScanning ||
@@ -287,16 +252,25 @@ function updateScannerButtons() {
   }
 
   if (lookupCodeBtn) {
-
     lookupCodeBtn.disabled =
       !canScan ||
       isLookingUp;
   }
 
   if (stopScanBtn) {
-
     stopScanBtn.disabled = !isScanning;
   }
+
+  console.log(
+    "MYZEN SCANNER BUTTON DEBUG:",
+    getButtonDebugState(),
+    {
+      approved,
+      canScan,
+      startDisabled: startScanBtn?.disabled,
+      lookupDisabled: lookupCodeBtn?.disabled
+    }
+  );
 }
 
 // ==========================================
@@ -304,24 +278,38 @@ function updateScannerButtons() {
 // ==========================================
 
 function updateSubmitButton() {
-
   if (!submitQrTransfer) return;
 
-  const canSubmit =
-    Boolean(
-      currentUser &&
-      currentProfile &&
-      currentRecipient &&
-      !isSubmitting &&
-      isGPSValid() &&
-      isValidTransferAmount()
-    );
+  const approved =
+    String(currentProfile?.status || "")
+      .trim()
+      .toLowerCase() === "approved";
+
+  const canSubmit = Boolean(
+    currentUser &&
+    currentProfile &&
+    approved &&
+    currentRecipient &&
+    !isSubmitting &&
+    isGPSValid() &&
+    isValidTransferAmount()
+  );
 
   submitQrTransfer.disabled = !canSubmit;
 
   submitQrTransfer.textContent = isSubmitting
     ? "Submitting..."
     : "Submit Transfer Request";
+
+  console.log(
+    "MYZEN SUBMIT BUTTON DEBUG:",
+    getButtonDebugState(),
+    {
+      approved,
+      canSubmit,
+      submitDisabled: submitQrTransfer.disabled
+    }
+  );
 }
 
 // ==========================================
@@ -329,7 +317,6 @@ function updateSubmitButton() {
 // ==========================================
 
 function updateAllButtons() {
-
   updateScannerButtons();
   updateSubmitButton();
 }
@@ -339,7 +326,6 @@ function updateAllButtons() {
 // ==========================================
 
 async function getAuthToken() {
-
   if (!currentUser) {
     throw new Error("Please log in first.");
   }
@@ -352,13 +338,11 @@ async function getAuthToken() {
 // ==========================================
 
 async function apiRequest(endpoint, options = {}) {
-
   const token = await getAuthToken();
 
   let response;
 
   try {
-
     response = await fetch(
       `${API_BASE_URL}${endpoint}`,
       {
@@ -379,9 +363,7 @@ async function apiRequest(endpoint, options = {}) {
           : {})
       }
     );
-
   } catch (error) {
-
     console.error("API CONNECTION ERROR:", error);
 
     throw new Error(
@@ -392,18 +374,12 @@ async function apiRequest(endpoint, options = {}) {
   let data;
 
   try {
-
     data = await response.json();
-
   } catch {
-
-    throw new Error(
-      "Backend returned an invalid response."
-    );
+    throw new Error("Backend returned an invalid response.");
   }
 
   if (!response.ok || data.success !== true) {
-
     throw new Error(
       data.message || "Backend request failed."
     );
@@ -417,9 +393,7 @@ async function apiRequest(endpoint, options = {}) {
 // ==========================================
 
 async function loadUserProfile(user) {
-
   try {
-
     const result = await apiRequest(
       "/api/me",
       {
@@ -431,30 +405,24 @@ async function loadUserProfile(user) {
       throw new Error("Wallet profile not found.");
     }
 
-    currentProfile = result.profile;
+    const profile = result.profile;
 
     if (
-      String(currentProfile.status || "").toLowerCase()
-      !== "approved"
+      String(profile.status || "")
+        .trim()
+        .toLowerCase() !== "approved"
     ) {
-
-      throw new Error(
-        "Your account is not approved."
-      );
+      throw new Error("Your account is not approved.");
     }
 
-    const country = normalizeCountry(
-      currentProfile.country
-    );
-
+    const country = normalizeCountry(profile.country);
     const currency = getCurrency(country);
 
     if (!country || !currency) {
-
-      throw new Error(
-        "Unsupported wallet country."
-      );
+      throw new Error("Unsupported wallet country.");
     }
+
+    currentProfile = profile;
 
     if (accountCountryEl) {
       accountCountryEl.textContent = country;
@@ -476,13 +444,8 @@ async function loadUserProfile(user) {
     );
 
     return true;
-
   } catch (error) {
-
-    console.error(
-      "PROFILE API ERROR:",
-      error
-    );
+    console.error("PROFILE API ERROR:", error);
 
     currentProfile = null;
 
@@ -502,7 +465,6 @@ async function loadUserProfile(user) {
 // ==========================================
 
 function resetRecipient() {
-
   currentRecipient = null;
 
   if (recipientInfo) {
@@ -533,13 +495,9 @@ function resetRecipient() {
 // ==========================================
 
 function normalizeReceiveCode(value) {
-
   let code = String(value || "").trim();
 
-  code = code.replace(
-    /^MYZEN-MONEY:/i,
-    ""
-  );
+  code = code.replace(/^MYZEN-MONEY:/i, "");
 
   if (!/^\d{6}$/.test(code)) {
     return "";
@@ -553,70 +511,61 @@ function normalizeReceiveCode(value) {
 // ==========================================
 
 async function lookupRecipient(rawCode) {
-
   if (isLookingUp) return;
 
   if (!currentUser || !currentProfile) {
-
-    showMessage(
-      "Please log in first.",
-      "error"
-    );
-
+    showMessage("Please log in first.", "error");
     return;
   }
 
-  if (!checkGPS()) return;
+  if (
+    String(currentProfile.status || "")
+      .trim()
+      .toLowerCase() !== "approved"
+  ) {
+    showMessage("Your account is not approved.", "error");
+    return;
+  }
+
+  if (!checkGPS()) {
+    updateAllButtons();
+    return;
+  }
 
   const code = normalizeReceiveCode(rawCode);
 
   if (!code) {
-
     showMessage(
       "Please enter a valid 6-digit Receive Code.",
       "error"
     );
-
     return;
   }
 
   isLookingUp = true;
 
   updateScannerButtons();
-
   resetRecipient();
 
-  showMessage(
-    "Searching recipient...",
-    "info"
-  );
+  showMessage("Searching recipient...", "info");
 
   try {
-
     const result = await apiRequest(
       "/api/lookup",
       {
         method: "POST",
-        body: {
-          code
-        }
+        body: { code }
       }
     );
 
     const recipient = result.recipient;
 
     if (!recipient || !recipient.uid) {
-
-      throw new Error(
-        "Recipient information is invalid."
-      );
+      throw new Error("Recipient information is invalid.");
     }
 
     if (recipient.uid === currentUser.uid) {
-
-      throw new Error(
-        "You cannot transfer to yourself."
-      );
+      throw new Error("You cannot transfer to yourself.");
     }
 
     const senderCountry = normalizeCountry(
@@ -631,7 +580,6 @@ async function lookupRecipient(rawCode) {
       !targetCountry ||
       targetCountry !== senderCountry
     ) {
-
       throw new Error(
         "Recipient country does not match your wallet."
       );
@@ -675,13 +623,8 @@ async function lookupRecipient(rawCode) {
       "Recipient found successfully. Enter amount to continue.",
       "success"
     );
-
   } catch (error) {
-
-    console.error(
-      "LOOKUP ERROR:",
-      error
-    );
+    console.error("LOOKUP ERROR:", error);
 
     resetRecipient();
 
@@ -689,12 +632,9 @@ async function lookupRecipient(rawCode) {
       error.message || "Recipient lookup failed.",
       "error"
     );
-
   } finally {
-
     isLookingUp = false;
-
-    updateScannerButtons();
+    updateAllButtons();
   }
 }
 
@@ -703,9 +643,15 @@ async function lookupRecipient(rawCode) {
 // ==========================================
 
 if (qrAmount) {
-
   qrAmount.addEventListener(
     "input",
+    updateSubmitButton
+  );
+}
+
+if (qrCurrency) {
+  qrCurrency.addEventListener(
+    "change",
     updateSubmitButton
   );
 }
@@ -715,27 +661,21 @@ if (qrAmount) {
 // ==========================================
 
 if (lookupCodeBtn) {
-
   lookupCodeBtn.addEventListener(
     "click",
     async () => {
-
       await lookupRecipient(
         receiveCodeInput?.value || ""
       );
-
     }
   );
 }
 
 if (receiveCodeInput) {
-
   receiveCodeInput.addEventListener(
     "keydown",
     async (event) => {
-
       if (event.key === "Enter") {
-
         event.preventDefault();
 
         await lookupRecipient(
@@ -751,20 +691,15 @@ if (receiveCodeInput) {
 // ==========================================
 
 async function onScanSuccess(decodedText) {
-
   if (!isScanning) return;
 
-  const code = normalizeReceiveCode(
-    decodedText
-  );
+  const code = normalizeReceiveCode(decodedText);
 
   if (!code) {
-
     showMessage(
       "Invalid MYZEN MONEY QR Code.",
       "error"
     );
-
     return;
   }
 
@@ -773,7 +708,6 @@ async function onScanSuccess(decodedText) {
   }
 
   await stopCamera();
-
   await lookupRecipient(code);
 }
 
@@ -782,88 +716,63 @@ async function onScanSuccess(decodedText) {
 // ==========================================
 
 async function startCamera() {
-
   if (!currentUser || !currentProfile) {
-
-    showMessage(
-      "Please log in first.",
-      "error"
-    );
-
+    showMessage("Please log in first.", "error");
     return;
   }
 
   if (
-    String(currentProfile.status || "").toLowerCase()
-    !== "approved"
+    String(currentProfile.status || "")
+      .trim()
+      .toLowerCase() !== "approved"
   ) {
-
-    showMessage(
-      "Your account is not approved.",
-      "error"
-    );
-
+    showMessage("Your account is not approved.", "error");
     return;
   }
 
   if (!checkGPS()) {
-
     updateScannerButtons();
     return;
   }
 
   if (typeof Html5Qrcode === "undefined") {
-
     showMessage(
       "QR Scanner library not loaded. Please refresh the page.",
       "error"
     );
-
     return;
   }
 
   if (isScanning || html5QrCode) return;
 
   if (!window.isSecureContext) {
-
     showMessage(
       "Camera requires HTTPS or localhost.",
       "error"
     );
-
     return;
   }
 
   try {
-
     if (startScanBtn) {
       startScanBtn.disabled = true;
     }
 
-    showMessage(
-      "Starting camera...",
-      "info"
-    );
+    showMessage("Starting camera...", "info");
 
     html5QrCode = new Html5Qrcode("reader");
 
     await html5QrCode.start(
-
       { facingMode: "environment" },
-
       {
         fps: 10,
-
         qrbox: {
           width: 250,
           height: 250
         }
       },
-
       onScanSuccess,
-
       () => {}
-
     );
 
     isScanning = true;
@@ -874,16 +783,10 @@ async function startCamera() {
       "Camera started. Scan a MYZEN MONEY QR Code.",
       "success"
     );
-
   } catch (error) {
-
-    console.error(
-      "CAMERA ERROR:",
-      error
-    );
+    console.error("CAMERA ERROR:", error);
 
     if (html5QrCode) {
-
       try {
         await html5QrCode.clear();
       } catch (clearError) {
@@ -909,36 +812,23 @@ async function startCamera() {
 // ==========================================
 
 async function stopCamera() {
-
   if (!html5QrCode) {
-
     isScanning = false;
-
     updateScannerButtons();
-
     return;
   }
 
   try {
-
     if (isScanning) {
       await html5QrCode.stop();
     }
 
     await html5QrCode.clear();
-
   } catch (error) {
-
-    console.warn(
-      "CAMERA STOP WARNING:",
-      error
-    );
-
+    console.warn("CAMERA STOP WARNING:", error);
   } finally {
-
     html5QrCode = null;
     isScanning = false;
-
     updateScannerButtons();
   }
 }
@@ -948,7 +838,6 @@ async function stopCamera() {
 // ==========================================
 
 if (startScanBtn) {
-
   startScanBtn.addEventListener(
     "click",
     startCamera
@@ -956,7 +845,6 @@ if (startScanBtn) {
 }
 
 if (stopScanBtn) {
-
   stopScanBtn.addEventListener(
     "click",
     stopCamera
@@ -968,57 +856,41 @@ if (stopScanBtn) {
 // ==========================================
 
 if (qrTransferForm) {
-
   qrTransferForm.addEventListener(
     "submit",
     async (event) => {
-
       event.preventDefault();
 
       if (isSubmitting) return;
 
       if (!currentUser || !currentProfile) {
-
-        showMessage(
-          "Please log in first.",
-          "error"
-        );
-
+        showMessage("Please log in first.", "error");
         return;
       }
 
       if (
-        String(currentProfile.status || "").toLowerCase()
-        !== "approved"
+        String(currentProfile.status || "")
+          .trim()
+          .toLowerCase() !== "approved"
       ) {
-
-        showMessage(
-          "Your account is not approved.",
-          "error"
-        );
-
+        showMessage("Your account is not approved.", "error");
         return;
       }
 
       if (!currentRecipient) {
-
         showMessage(
           "Please find a recipient first.",
           "error"
         );
-
         return;
       }
 
       if (!checkGPS()) {
-
         updateSubmitButton();
         return;
       }
 
-      const amount = Number(
-        qrAmount?.value
-      );
+      const amount = Number(qrAmount?.value);
 
       const currency = String(
         qrCurrency?.value || ""
@@ -1028,27 +900,17 @@ if (qrTransferForm) {
         normalizeCountry(currentProfile.country)
       );
 
-      if (
-        !Number.isFinite(amount) ||
-        amount <= 0
-      ) {
-
-        showMessage(
-          "Please enter a valid amount.",
-          "error"
-        );
-
+      if (!Number.isFinite(amount) || amount <= 0) {
+        showMessage("Please enter a valid amount.", "error");
         updateSubmitButton();
         return;
       }
 
       if (currency !== expectedCurrency) {
-
         showMessage(
           "Currency does not match your wallet.",
           "error"
         );
-
         updateSubmitButton();
         return;
       }
@@ -1057,26 +919,22 @@ if (qrTransferForm) {
         currency === "MMK" &&
         !Number.isInteger(amount)
       ) {
-
         showMessage(
           "MMK amount must be a whole number.",
           "error"
         );
-
         updateSubmitButton();
         return;
       }
 
       if (
         currency === "THB" &&
-        !Number.isInteger(amount * 100)
+        !Number.isInteger(Math.round(amount * 100))
       ) {
-
         showMessage(
           "THB supports up to 2 decimal places.",
           "error"
         );
-
         updateSubmitButton();
         return;
       }
@@ -1096,23 +954,16 @@ if (qrTransferForm) {
       );
 
       try {
-
         const result = await apiRequest(
           "/api/transfer",
           {
             method: "POST",
-
             body: {
               code: currentRecipient.code,
-
               recipientUid: currentRecipient.uid,
-
               currency,
-
               amount,
-
               note: qrNote?.value || "",
-
               transferId
             }
           }
@@ -1139,9 +990,7 @@ if (qrTransferForm) {
         }
 
         resetRecipient();
-
       } catch (error) {
-
         console.error(
           "MYZEN BACKEND TRANSFER ERROR:",
           error
@@ -1151,13 +1000,9 @@ if (qrTransferForm) {
           error.message || "Transfer request failed.",
           "error"
         );
-
       } finally {
-
         isSubmitting = false;
-
-        updateSubmitButton();
-        updateScannerButtons();
+        updateAllButtons();
       }
     }
   );
@@ -1170,21 +1015,13 @@ if (qrTransferForm) {
 window.addEventListener(
   "myzenlocationchange",
   () => {
-
     updateAllButtons();
 
     if (currentProfile && checkGPS()) {
-
       showMessage(
         "GPS verified. You can scan or transfer.",
         "success"
       );
-
-    } else {
-
-      if (currentProfile) {
-        updateAllButtons();
-      }
     }
   }
 );
@@ -1194,7 +1031,6 @@ window.addEventListener(
 // ==========================================
 
 onAuthStateChanged(auth, async (user) => {
-
   currentUser = user;
 
   currentProfile = null;
@@ -1210,7 +1046,6 @@ onAuthStateChanged(auth, async (user) => {
   resetRecipient();
 
   if (!user) {
-
     if (accountCountryEl) {
       accountCountryEl.textContent = "Not logged in";
     }
@@ -1225,27 +1060,22 @@ onAuthStateChanged(auth, async (user) => {
     );
 
     updateAllButtons();
-
     return;
   }
 
   const profileLoaded = await loadUserProfile(user);
 
   if (!profileLoaded) {
-
     updateAllButtons();
     return;
   }
 
   if (!window.MYZEN_LOCATION?.ready) {
-
     showMessage(
       "GPS location is required. Please allow GPS access.",
       "error"
     );
-
   } else if (checkGPS()) {
-
     showMessage(
       "GPS verified. You can scan or enter Receive Code.",
       "success"
@@ -1280,11 +1110,8 @@ if (qrTransferForm) {
 }
 
 if (submitQrTransfer) {
-
   submitQrTransfer.disabled = true;
-
-  submitQrTransfer.textContent =
-    "Submit Transfer Request";
+  submitQrTransfer.textContent = "Submit Transfer Request";
 }
 
 updateAllButtons();
