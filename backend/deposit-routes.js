@@ -1604,11 +1604,9 @@ function createDepositRoutes({
       try {
         const id = String(req.params.id || "");
 
-        if (
-          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
-        ) {
-          return error(res, 400, "Invalid transfer ID.");
-        }
+          if (!/^[A-Za-z0-9_-]{1,150}$/.test(id)) {
+       return error(res, 400, "Invalid transfer ID.");
+       }
 
         const requestRef = db
           .collection("internationalTransfers")
@@ -1679,11 +1677,9 @@ function createDepositRoutes({
       try {
         const id = String(req.params.id || "");
 
-        if (
-          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
-        ) {
-          return error(res, 400, "Invalid transfer ID.");
-        }
+      if (!/^[A-Za-z0-9_-]{1,150}$/.test(id)) {
+  return error(res, 400, "Invalid transfer ID.");
+}
 
         const reason = String(
           req.body?.reason || "Rejected by administrator"
