@@ -148,6 +148,39 @@ function showMessage(message, type = "info") {
 // GPS VALIDATION
 // ==========================================
 
+function isGPSValid() {
+
+  const location = window.MYZEN_LOCATION;
+
+  if (!location || location.ready !== true) {
+    return false;
+  }
+
+  const gpsCountry = normalizeCountry(
+    location.country
+  );
+
+  const gpsCurrency = String(
+    location.currency || ""
+  ).toUpperCase();
+
+  const accountCountry = normalizeCountry(
+    currentProfile?.country
+  );
+
+  const expectedCurrency = getCurrency(
+    accountCountry
+  );
+
+  return Boolean(
+    gpsCountry &&
+    gpsCurrency &&
+    accountCountry &&
+    gpsCountry === accountCountry &&
+    gpsCurrency === expectedCurrency
+  );
+}
+
 function checkGPS() {
 
   const location = window.MYZEN_LOCATION;
@@ -205,6 +238,58 @@ function checkGPS() {
 }
 
 // ==========================================
+// AMOUNT VALIDATION
+// ==========================================
+
+function isValidTransferAmount() {
+
+  const amount = Number(qrAmount?.value);
+
+  const currency = String(
+    qrCurrency?.value || ""
+  ).toUpperCase();
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return false;
+  }
+
+  if (currency === "MMK") {
+    return Number.isInteger(amount);
+  }
+
+  if (currency === "THB") {
+    return Number.isInteger(amount * 100);
+  }
+
+  return false;
+}
+
+// ==========================================
+// UPDATE SUBMIT BUTTON
+// ==========================================
+
+function updateSubmitButton() {
+
+  if (!submitQrTransfer) return;
+
+  const canSubmit =
+    Boolean(
+      currentUser &&
+      currentProfile &&
+      currentRecipient &&
+      !isSubmitting &&
+      isGPSValid() &&
+      isValidTransferAmount()
+    );
+
+  submitQrTransfer.disabled = !canSubmit;
+
+  submitQrTransfer.textContent = isSubmitting
+    ? "Submitting..."
+    : "Submit Transfer Request";
+}
+
+// ==========================================
 // FIREBASE AUTH TOKEN
 // ==========================================
 
@@ -225,24 +310,35 @@ async function apiRequest(endpoint, options = {}) {
 
   const token = await getAuthToken();
 
-  const response = await fetch(
-    `${API_BASE_URL}${endpoint}`,
-    {
-      method: options.method || "POST",
+  let response;
 
-      headers: {
-        "Authorization": `Bearer ${token}`,
+  try {
+
+    response = await fetch(
+      `${API_BASE_URL}${endpoint}`,
+      {
+        method: options.method || "POST",
+
+        headers: {
+          "Authorization": `Bearer ${token}`,
+
+          ...(options.body !== undefined
+            ? { "Content-Type": "application/json" }
+            : {})
+        },
 
         ...(options.body !== undefined
-          ? { "Content-Type": "application/json" }
+          ? { body: JSON.stringify(options.body) }
           : {})
-      },
+      }
+    );
 
-      ...(options.body !== undefined
-        ? { body: JSON.stringify(options.body) }
-        : {})
-    }
-  );
+  } catch (error) {
+
+    throw new Error(
+      "Unable to connect to MYZEN MONEY server. Please try again."
+    );
+  }
 
   let data;
 
@@ -288,7 +384,10 @@ async function loadUserProfile(user) {
 
     currentProfile = result.profile;
 
-    if (currentProfile.status !== "approved") {
+    if (
+      String(currentProfile.status || "").toLowerCase()
+      !== "approved"
+    ) {
 
       throw new Error(
         "Your account is not approved."
@@ -325,6 +424,8 @@ async function loadUserProfile(user) {
       "success"
     );
 
+    updateSubmitButton();
+
     return true;
 
   } catch (error) {
@@ -335,6 +436,8 @@ async function loadUserProfile(user) {
     );
 
     currentProfile = null;
+
+    updateSubmitButton();
 
     showMessage(
       error.message || "Unable to load wallet profile.",
@@ -372,6 +475,8 @@ function resetRecipient() {
   if (qrTransferForm) {
     qrTransferForm.style.display = "none";
   }
+
+  updateSubmitButton();
 }
 
 // ==========================================
@@ -493,7 +598,7 @@ async function lookupRecipient(rawCode) {
     };
 
     if (recipientName) {
-      recipientName.textContent = recipient.name;
+      recipientName.textContent = recipient.name || "MYZEN MONEY User";
     }
 
     if (recipientCountry) {
@@ -516,8 +621,10 @@ async function lookupRecipient(rawCode) {
       qrCurrency.value = getCurrency(senderCountry);
     }
 
+    updateSubmitButton();
+
     showMessage(
-      "Recipient found successfully.",
+      "Recipient found successfully. Enter amount to continue.",
       "success"
     );
 
@@ -543,6 +650,18 @@ async function lookupRecipient(rawCode) {
       lookupCodeBtn.disabled = false;
     }
   }
+}
+
+// ==========================================
+// AMOUNT INPUT CHANGE
+// ==========================================
+
+if (qrAmount) {
+
+  qrAmount.addEventListener(
+    "input",
+    updateSubmitButton
+  );
 }
 
 // ==========================================
@@ -761,7 +880,7 @@ if (stopScanBtn) {
 }
 
 // ==========================================
-// DEMO TRANSFER
+// WALLET TRANSFER REQUEST
 // ==========================================
 
 if (qrTransferForm) {
@@ -784,6 +903,19 @@ if (qrTransferForm) {
         return;
       }
 
+      if (
+        String(currentProfile.status || "").toLowerCase()
+        !== "approved"
+      ) {
+
+        showMessage(
+          "Your account is not approved.",
+          "error"
+        );
+
+        return;
+      }
+
       if (!currentRecipient) {
 
         showMessage(
@@ -794,7 +926,10 @@ if (qrTransferForm) {
         return;
       }
 
-      if (!checkGPS()) return;
+      if (!checkGPS()) {
+        updateSubmitButton();
+        return;
+      }
 
       const amount = Number(
         qrAmount?.value
@@ -818,6 +953,7 @@ if (qrTransferForm) {
           "error"
         );
 
+        updateSubmitButton();
         return;
       }
 
@@ -828,6 +964,7 @@ if (qrTransferForm) {
           "error"
         );
 
+        updateSubmitButton();
         return;
       }
 
@@ -841,6 +978,7 @@ if (qrTransferForm) {
           "error"
         );
 
+        updateSubmitButton();
         return;
       }
 
@@ -854,20 +992,16 @@ if (qrTransferForm) {
           "error"
         );
 
+        updateSubmitButton();
         return;
       }
 
       isSubmitting = true;
 
-      if (submitQrTransfer) {
-
-        submitQrTransfer.disabled = true;
-
-        submitQrTransfer.textContent = "Processing...";
-      }
+      updateSubmitButton();
 
       showMessage(
-        "Processing demo transfer...",
+        "Submitting transfer request...",
         "info"
       );
 
@@ -898,7 +1032,7 @@ if (qrTransferForm) {
 
         showMessage(
           result.message ||
-          "Demo transfer completed successfully.",
+          "Transfer request submitted successfully.",
           "success"
         );
 
@@ -926,7 +1060,7 @@ if (qrTransferForm) {
         );
 
         showMessage(
-          error.message || "Transfer failed.",
+          error.message || "Transfer request failed.",
           "error"
         );
 
@@ -934,12 +1068,7 @@ if (qrTransferForm) {
 
         isSubmitting = false;
 
-        if (submitQrTransfer) {
-
-          submitQrTransfer.disabled = false;
-
-          submitQrTransfer.textContent = "Transfer";
-        }
+        updateSubmitButton();
       }
     }
   );
@@ -952,6 +1081,8 @@ if (qrTransferForm) {
 window.addEventListener(
   "myzenlocationchange",
   () => {
+
+    updateSubmitButton();
 
     if (currentProfile && checkGPS()) {
 
@@ -974,6 +1105,10 @@ onAuthStateChanged(auth, async (user) => {
   currentProfile = null;
 
   currentRecipient = null;
+
+  isSubmitting = false;
+
+  updateSubmitButton();
 
   await stopCamera();
 
@@ -1004,6 +1139,8 @@ onAuthStateChanged(auth, async (user) => {
 
     checkGPS();
   }
+
+  updateSubmitButton();
 });
 
 // ==========================================
@@ -1022,6 +1159,11 @@ if (qrTransferForm) {
   qrTransferForm.style.display = "none";
 }
 
+if (submitQrTransfer) {
+  submitQrTransfer.disabled = true;
+  submitQrTransfer.textContent = "Submit Transfer Request";
+}
+
 console.log(
-  "MYZEN MONEY SCAN.JS BACKEND VERSION LOADED"
+  "MYZEN MONEY SCAN & TRANSFER VERSION LOADED"
 );
