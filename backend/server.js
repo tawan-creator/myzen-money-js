@@ -4,6 +4,7 @@
 // ==========================================
 // MYZEN MONEY - PRODUCTION WALLET BACKEND
 // Wallet-to-Wallet Internal Transfers
+// Deposit API + Admin Approval
 // Firebase Admin SDK v14
 // ==========================================
 
@@ -67,11 +68,12 @@ app.use(cors({
     );
   },
 
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "OPTIONS"],
 
   allowedHeaders: [
     "Content-Type",
-    "Authorization"
+    "Authorization",
+    "x-admin-bootstrap-secret"
   ],
 
   credentials: true
@@ -304,8 +306,13 @@ async function requireAuth(req, res, next) {
 
     req.user = {
       uid: decodedToken.uid,
-      email: decodedToken.email || ""
+      email: decodedToken.email || "",
+      emailVerified: decodedToken.email_verified === true,
+      admin: decodedToken.admin === true
     };
+
+    // Firebase Admin Auth instance for deposit bootstrap
+    req.firebaseAuth = firebaseAuth;
 
     return next();
 
@@ -610,9 +617,7 @@ app.post(
         req.body.note || ""
       ).trim().slice(0, 200);
 
-      // ======================================
       // INPUT VALIDATION
-      // ======================================
 
       if (!/^\d{6}$/.test(code)) {
         return sendError(
@@ -676,9 +681,7 @@ app.post(
         );
       }
 
-      // ======================================
       // FIRESTORE REFERENCES
-      // ======================================
 
       const senderRef = db
         .collection("users")
@@ -704,20 +707,15 @@ app.post(
         .collection("walletLedger")
         .doc(transferId + "_CREDIT");
 
-      // ======================================
       // ATOMIC FIRESTORE TRANSACTION
-      // ======================================
 
       const result = await db.runTransaction(
         async (transaction) => {
 
-          // Read existing transfer first.
           const existingTransferSnap =
             await transaction.get(transferRef);
 
-          // ==================================
           // IDEMPOTENCY / RETRY PROTECTION
-          // ==================================
 
           if (existingTransferSnap.exists) {
             const existing = existingTransferSnap.data();
@@ -751,7 +749,6 @@ app.post(
             };
           }
 
-          // Read all required documents.
           const senderSnap =
             await transaction.get(senderRef);
 
@@ -761,9 +758,7 @@ app.post(
           const codeSnap =
             await transaction.get(codeRef);
 
-          // ==================================
           // CHECK SENDER
-          // ==================================
 
           if (!senderSnap.exists) {
             throw new Error("SENDER_NOT_FOUND");
@@ -775,9 +770,7 @@ app.post(
             throw new Error("SENDER_NOT_APPROVED");
           }
 
-          // ==================================
           // CHECK RECIPIENT
-          // ==================================
 
           if (!recipientSnap.exists) {
             throw new Error("RECIPIENT_NOT_FOUND");
@@ -789,9 +782,7 @@ app.post(
             throw new Error("RECIPIENT_NOT_APPROVED");
           }
 
-          // ==================================
           // CHECK RECEIVE CODE
-          // ==================================
 
           if (!codeSnap.exists) {
             throw new Error("RECEIVE_CODE_NOT_FOUND");
@@ -806,9 +797,7 @@ app.post(
             throw new Error("RECEIVE_CODE_MISMATCH");
           }
 
-          // ==================================
           // CHECK COUNTRY AND CURRENCY
-          // ==================================
 
           const senderCountry = normalizeCountry(
             sender.country
@@ -833,9 +822,7 @@ app.post(
             throw new Error("CURRENCY_MISMATCH");
           }
 
-          // ==================================
           // CHECK BALANCES
-          // ==================================
 
           const senderBalanceMinor =
             balanceToMinorUnits(
@@ -891,9 +878,7 @@ app.post(
             currency
           );
 
-          // ==================================
           // UPDATE BOTH WALLETS
-          // ==================================
 
           transaction.update(senderRef, {
             balance: senderAfter,
@@ -905,9 +890,7 @@ app.post(
             updatedAt: FieldValue.serverTimestamp()
           });
 
-          // ==================================
           // TRANSFER HISTORY
-          // ==================================
 
           transaction.set(transferRef, {
             transferId,
@@ -940,9 +923,7 @@ app.post(
             updatedAt: FieldValue.serverTimestamp()
           });
 
-          // ==================================
           // DOUBLE-SIDED WALLET LEDGER
-          // ==================================
 
           transaction.set(senderLedgerRef, {
             ledgerId: transferId + "_DEBIT",
@@ -1097,6 +1078,21 @@ app.post(
 );
 
 // ==========================================
+// DEPOSIT ROUTES
+// ==========================================
+
+const createDepositRoutes = require("./deposit-routes");
+
+app.use(
+  "/api",
+  createDepositRoutes({
+    db,
+    FieldValue,
+    requireAuth
+  })
+);
+
+// ==========================================
 // UNKNOWN API ROUTE
 // ==========================================
 
@@ -1135,5 +1131,6 @@ app.listen(PORT, () => {
   console.log("MYZEN MONEY BACKEND STARTED");
   console.log("PORT:", PORT);
   console.log("TRANSFER MODE: WALLET_TO_WALLET");
+  console.log("DEPOSIT API: ENABLED");
   console.log("--------------------------------");
 });

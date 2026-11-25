@@ -70,3 +70,5 @@ node_modules/
 # MYZEN MONEY SECURITY
 serviceAccountKey.json
 backend/serviceAccountKey.json
+# MYZEN MONEY LOCAL BACKUPS
+*.backup*

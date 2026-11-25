@@ -1,4 +1,3 @@
-
 import { auth, db } from "./firebase.js";
 
 import {
@@ -8,522 +7,347 @@ import {
 
 import {
   doc,
-  getDoc,
-  addDoc,
-  collection,
-  query,
-  where,
-  orderBy,
-  getDocs,
-  serverTimestamp
+  getDoc
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
+const API_BASE_URL = "https://myzen-money-js.onrender.com";
 
-/* =====================================
-   CONFIGURATION
-===================================== */
+const $ = (id) => document.getElementById(id);
 
-// Demo payment accounts.
-// Replace these with your real Admin payment details before accepting money.
-
-const paymentAccounts = {
-  "PromptPay": {
-    bank: "PromptPay",
-    accountNumber: "DEMO PROMPTPAY",
-    holder: "DEMO ACCOUNT",
-    type: "promptpay",
-    notice: "Thailand PromptPay demo QR. This QR is not payable."
-  },
-
-  "TTB Bank": {
-    bank: "TTB Bank",
-    accountNumber: "2812528343",
-    holder: "DEMO ACCOUNT",
-    type: "bank",
-    notice: "TTB demo account. Replace with your real bank details."
-  },
-
-  "KBZPay": {
-    bank: "KBZPay",
-    accountNumber: "09-000-000-000",
-    holder: "DEMO ACCOUNT",
-    type: "wallet",
-    notice: "KBZPay demo account. Replace with your real account."
-  },
-
-  "WavePay": {
-    bank: "WavePay",
-    accountNumber: "09-000-000-000",
-    holder: "DEMO ACCOUNT",
-    type: "wallet",
-    notice: "WavePay demo account. Replace with your real account."
-  },
-
-  "AYA Pay": {
-    bank: "AYA Pay",
-    accountNumber: "09-000-000-000",
-    holder: "DEMO ACCOUNT",
-    type: "wallet",
-    notice: "AYA Pay demo account. Replace with your real account."
-  },
-
-  "Bank Transfer": {
-    bank: "Bank Transfer",
-    accountNumber: "Not configured",
-    holder: "Not configured",
-    type: "unconfigured",
-    notice: "Please contact Admin for bank transfer details."
-  }
+const els = {
+  logout: $("logoutBtn"),
+  balance: $("currentBalance"),
+  country: $("accountCountry"),
+  method: $("paymentMethod"),
+  paymentInfo: $("paymentInformation"),
+  form: $("depositForm"),
+  amount: $("depositAmount"),
+  transactionId: $("transactionId"),
+  note: $("depositNote"),
+  proof: $("proofFile"),
+  preview: $("proofPreview"),
+  submit: $("depositBtn"),
+  message: $("depositMessage"),
+  history: $("depositHistory")
 };
 
-
-/* =====================================
-   DOM ELEMENTS
-===================================== */
-
-const depositForm = document.getElementById("depositForm");
-const depositAmount = document.getElementById("depositAmount");
-const methodSelect = document.getElementById("paymentMethod");
-const transactionId = document.getElementById("transactionId");
-const depositNote = document.getElementById("depositNote");
-const depositMessage = document.getElementById("depositMessage");
-const depositBtn = document.getElementById("depositBtn");
-
-const currentBalance = document.getElementById("currentBalance");
-const accountCurrency = document.getElementById("accountCurrency");
-const accountCountry = document.getElementById("accountCountry");
-
-const paymentInfo = document.getElementById("paymentInformation");
-const paymentBank = document.getElementById("paymentBank");
-const paymentAccountNumber = document.getElementById("paymentAccountNumber");
-const paymentHolder = document.getElementById("paymentHolder");
-const paymentNotice = document.getElementById("paymentNotice");
-
-const copyButton = document.getElementById("copyAccountNumber");
-const qrArea = document.getElementById("qrArea");
-const qrContainer = document.getElementById("promptPayQR");
-
-const depositHistory = document.getElementById("depositHistory");
-const logoutBtn = document.getElementById("logoutBtn");
-
-
-/* =====================================
-   USER STATE
-===================================== */
-
 let currentUser = null;
-let userCountry = "";
-let userCurrency = "THB";
-let userBalance = 0;
+let currentMethods = [];
+let selectedProfile = null;
 
-
-/* =====================================
-   HELPERS
-===================================== */
-
-function showMessage(message, success = false) {
-  if (!depositMessage) return;
-
-  depositMessage.style.display = "block";
-  depositMessage.textContent = message;
-
-  depositMessage.style.background = success ? "#e7f8ed" : "#fee4e2";
-  depositMessage.style.color = success ? "#067647" : "#b42318";
+function showMessage(message, type = "") {
+  els.message.textContent = message;
+  els.message.className = `message ${type}`;
 }
 
-function currencySymbol(currency) {
-  if (currency === "THB") return "฿";
-  if (currency === "MMK") return "Ks";
-  return currency;
+function money(value, currency = "THB") {
+  const number = Number(value || 0);
+
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: currency === "THB" ? 2 : 0,
+    maximumFractionDigits: currency === "THB" ? 2 : 0
+  }).format(number) + " " + currency;
 }
 
-function formatMoney(amount) {
-  return Number(amount || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[char]);
 }
 
-function normalizeCountry(country) {
-  const value = String(country || "").trim().toLowerCase();
-
-  if (
-    value === "thailand" ||
-    value === "ไทย" ||
-    value === "th"
-  ) {
-    return "Thailand";
-  }
-
-  if (
-    value === "myanmar" ||
-    value === "burma" ||
-    value === "မြန်မာ" ||
-    value === "mm"
-  ) {
-    return "Myanmar";
-  }
-
-  return "";
+async function getToken() {
+  if (!currentUser) throw new Error("Please sign in again.");
+  return currentUser.getIdToken();
 }
 
+async function apiRequest(endpoint, options = {}) {
+  const token = await getToken();
 
-/* =====================================
-   COUNTRY PAYMENT METHODS
-===================================== */
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    ...(options.headers || {})
+  };
 
-function loadPaymentMethods(country) {
-  methodSelect.innerHTML = "";
-
-  const firstOption = document.createElement("option");
-  firstOption.value = "";
-  firstOption.textContent = "Select Payment Method";
-  methodSelect.appendChild(firstOption);
-
-  let methods = [];
-
-  if (country === "Thailand") {
-    methods = [
-      "PromptPay",
-      "TTB Bank",
-      "Bank Transfer"
-    ];
-
-    userCurrency = "THB";
-
-  } else if (country === "Myanmar") {
-    methods = [
-      "KBZPay",
-      "WavePay",
-      "AYA Pay",
-      "Bank Transfer"
-    ];
-
-    userCurrency = "MMK";
-
-  } else {
-    methods = [];
-  }
-
-  methods.forEach((method) => {
-    const option = document.createElement("option");
-    option.value = method;
-    option.textContent = method;
-    methodSelect.appendChild(option);
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers
   });
 
-  accountCurrency.textContent = userCurrency;
-
-  if (country === "Thailand" || country === "Myanmar") {
-    paymentInfo.style.display = "none";
-  } else {
-    paymentInfo.style.display = "none";
-    showMessage(
-      "Your account country is not configured. Please update your country in your profile."
-    );
-  }
-}
-
-
-/* =====================================
-   DEMO PROMPTPAY QR
-===================================== */
-
-function generateDemoPromptPayQR() {
-  qrContainer.innerHTML = "";
-
-  if (typeof QRCode === "undefined") {
-    qrContainer.textContent = "QR library could not load.";
-    return;
-  }
-
-  // This is a demo QR payload, NOT a real PromptPay payment payload.
-  const demoText = "MYZEN MONEY - DEMO ONLY - NOT FOR PAYMENT";
-
-  new QRCode(qrContainer, {
-    text: demoText,
-    width: 210,
-    height: 210,
-    colorDark: "#000000",
-    colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.H
-  });
-}
-
-
-/* =====================================
-   PAYMENT INFORMATION
-===================================== */
-
-function updatePaymentInformation() {
-  const selectedMethod = methodSelect.value;
-
-  // Never replace paymentInfo.innerHTML here.
-  // Keeping its child elements prevents errors when switching methods.
-
-  if (!selectedMethod) {
-    paymentInfo.style.display = "none";
-    qrArea.style.display = "none";
-    return;
-  }
-
-  paymentInfo.style.display = "block";
-
-  const account = paymentAccounts[selectedMethod];
-
-  if (!account) {
-    paymentBank.textContent = selectedMethod;
-    paymentAccountNumber.textContent = "Not configured";
-    paymentHolder.textContent = "Not configured";
-    paymentNotice.textContent = "Payment details are not configured.";
-    copyButton.style.display = "none";
-    qrArea.style.display = "none";
-    return;
-  }
-
-  paymentBank.textContent = account.bank;
-  paymentAccountNumber.textContent = account.accountNumber;
-  paymentHolder.textContent = account.holder;
-  paymentNotice.textContent = account.notice;
-
-  if (account.type === "promptpay") {
-    qrArea.style.display = "block";
-    copyButton.style.display = "none";
-    generateDemoPromptPayQR();
-
-  } else {
-    qrArea.style.display = "none";
-
-    if (account.type === "unconfigured") {
-      copyButton.style.display = "none";
-    } else {
-      copyButton.style.display = "inline-block";
-    }
-  }
-}
-
-methodSelect.addEventListener("change", updatePaymentInformation);
-
-
-/* =====================================
-   COPY ACCOUNT NUMBER
-===================================== */
-
-copyButton.addEventListener("click", async () => {
-  const method = methodSelect.value;
-  const account = paymentAccounts[method];
-
-  if (!account || account.type === "unconfigured") {
-    showMessage("Account number is not available.");
-    return;
-  }
+  let data;
 
   try {
-    await navigator.clipboard.writeText(account.accountNumber);
-    showMessage("Account number copied successfully.", true);
-  } catch (error) {
-    showMessage("Unable to copy. Please copy the number manually.");
+    data = await response.json();
+  } catch {
+    throw new Error("The server returned an invalid response.");
   }
+
+  if (!response.ok || data.success === false) {
+    throw new Error(data.message || `Request failed (${response.status}).`);
+  }
+
+  return data;
+}
+
+async function loadProfile() {
+  const snapshot = await getDoc(doc(db, "users", currentUser.uid));
+
+  if (!snapshot.exists()) {
+    throw new Error("Your user profile was not found.");
+  }
+
+  selectedProfile = snapshot.data();
+
+  const country = selectedProfile.country ||
+    selectedProfile.accountCountry ||
+    selectedProfile.selectedCountry ||
+    "Thailand";
+
+  const currency = selectedProfile.currency ||
+    (String(country).toLowerCase().includes("myanmar") ? "MMK" : "THB");
+
+  const balance = Number(selectedProfile.balance || 0);
+
+  els.country.textContent = `${country} · ${currency}`;
+  els.balance.textContent = money(balance, currency);
+
+  return { country, currency, balance };
+}
+
+function renderPaymentInformation(method) {
+  if (!method) {
+    els.paymentInfo.textContent = "Select a payment method to view payment instructions.";
+    return;
+  }
+
+  const accountNumber = method.accountNumber || "";
+  const accountName = method.accountName || "";
+  const bank = method.bank || "";
+  const instructions = method.instructions || "";
+
+  els.paymentInfo.innerHTML = `
+    <p><strong>Payment Method:</strong> ${escapeHTML(method.name)}</p>
+    ${bank ? `<p><strong>Bank / Provider:</strong> ${escapeHTML(bank)}</p>` : ""}
+    ${accountName ? `<p><strong>Account Name:</strong> ${escapeHTML(accountName)}</p>` : ""}
+    ${accountNumber ? `
+      <p><strong>Account Number:</strong></p>
+      <div class="copy-row">
+        <span id="receivingAccountNumber">${escapeHTML(accountNumber)}</span>
+        <button class="secondary" id="copyAccountNumber" type="button">Copy</button>
+      </div>
+    ` : ""}
+    ${instructions ? `<p><strong>Instructions:</strong><br>${escapeHTML(instructions).replace(/\n/g, "<br>")}</p>` : ""}
+  `;
+
+  const copyButton = $("copyAccountNumber");
+
+  if (copyButton) {
+    copyButton.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(accountNumber);
+        copyButton.textContent = "Copied";
+      } catch {
+        copyButton.textContent = "Copy failed";
+      }
+    });
+  }
+}
+
+async function loadPaymentMethods() {
+  const data = await apiRequest("/api/deposit/methods");
+
+  currentMethods = Array.isArray(data.methods) ? data.methods : [];
+
+  els.method.innerHTML = '<option value="">Select payment method</option>';
+
+  if (!currentMethods.length) {
+    els.method.innerHTML = '<option value="">No payment methods available</option>';
+    els.paymentInfo.textContent =
+      "There are currently no active payment methods. Please contact support.";
+    return;
+  }
+
+  for (const method of currentMethods) {
+    const option = document.createElement("option");
+    option.value = method.id;
+    option.textContent = method.name;
+    els.method.appendChild(option);
+  }
+
+  els.method.value = "";
+  renderPaymentInformation(null);
+}
+
+async function loadDepositHistory() {
+  els.history.textContent = "Loading deposit history...";
+
+  const data = await apiRequest("/api/deposits/my");
+  const deposits = Array.isArray(data.deposits) ? data.deposits : [];
+
+  if (!deposits.length) {
+    els.history.innerHTML = '<div class="empty">No deposit requests yet.</div>';
+    return;
+  }
+
+  els.history.innerHTML = deposits.map((item) => {
+    const status = String(item.status || "pending").toLowerCase();
+    const currency = item.currency || "THB";
+    const date = formatDate(item.createdAt);
+
+    return `
+      <div class="history-item">
+        <div>
+          <strong>${escapeHTML(item.methodName || "Deposit")}</strong>
+          <div class="muted">${escapeHTML(item.transactionId || "")}</div>
+          <span class="status ${escapeHTML(status)}">${escapeHTML(status)}</span>
+          <div class="muted">${escapeHTML(date)}</div>
+        </div>
+        <strong>${escapeHTML(money(item.amount, currency))}</strong>
+      </div>
+    `;
+  }).join("");
+}
+
+function formatDate(value) {
+  if (!value) return "Date unavailable";
+
+  let date;
+
+  if (typeof value === "string" || typeof value === "number") {
+    date = new Date(value);
+  } else if (value.seconds) {
+    date = new Date(value.seconds * 1000);
+  } else {
+    return "Date unavailable";
+  }
+
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+
+  return date.toLocaleString();
+}
+
+els.method.addEventListener("change", () => {
+  const method = currentMethods.find((item) => item.id === els.method.value);
+  renderPaymentInformation(method || null);
 });
 
+els.proof.addEventListener("change", () => {
+  const file = els.proof.files?.[0];
 
-/* =====================================
-   LOAD USER PROFILE
-===================================== */
-
-async function loadUserProfile(user) {
-  const userRef = doc(db, "users", user.uid);
-  const userSnap = await getDoc(userRef);
-
-  if (!userSnap.exists()) {
-    throw new Error("User profile not found in Firestore.");
+  if (!file) {
+    els.preview.removeAttribute("src");
+    els.preview.style.display = "none";
+    return;
   }
 
-  const profile = userSnap.data();
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
-  userCountry = normalizeCountry(profile.country);
-
-  userBalance = Number(profile.balance || 0);
-
-  if (profile.currency) {
-    userCurrency = profile.currency;
-  } else if (userCountry === "Thailand") {
-    userCurrency = "THB";
-  } else if (userCountry === "Myanmar") {
-    userCurrency = "MMK";
+  if (!allowedTypes.includes(file.type)) {
+    els.proof.value = "";
+    els.preview.style.display = "none";
+    showMessage("Please choose a JPG, PNG, or WEBP image.", "error");
+    return;
   }
 
-  accountCountry.textContent = userCountry || profile.country || "Not configured";
-
-  currentBalance.textContent = formatMoney(userBalance);
-  accountCurrency.textContent = userCurrency;
-
-  loadPaymentMethods(userCountry);
-}
-
-
-/* =====================================
-   LOAD DEPOSIT HISTORY
-===================================== */
-
-async function loadDepositHistory(uid) {
-  depositHistory.textContent = "Loading history...";
-
-  try {
-    const historyQuery = query(
-      collection(db, "depositRequests"),
-      where("uid", "==", uid),
-      orderBy("createdAt", "desc")
-    );
-
-    const snapshot = await getDocs(historyQuery);
-
-    if (snapshot.empty) {
-      depositHistory.textContent = "No deposit history yet.";
-      return;
-    }
-
-    depositHistory.innerHTML = "";
-
-    snapshot.forEach((documentSnapshot) => {
-      const data = documentSnapshot.data();
-
-      const item = document.createElement("div");
-      item.className = "history-item";
-
-      const amount = document.createElement("strong");
-      amount.textContent =
-        `${currencySymbol(data.currency || userCurrency)} ${formatMoney(data.amount)}`;
-
-      const method = document.createElement("div");
-      method.textContent = `Method: ${data.paymentMethod || "-"}`;
-
-      const reference = document.createElement("div");
-      reference.textContent = `Reference: ${data.transactionId || "-"}`;
-
-      const status = document.createElement("span");
-      status.className = "status";
-      status.textContent = data.status || "pending";
-
-      item.appendChild(amount);
-      item.appendChild(method);
-      item.appendChild(reference);
-      item.appendChild(status);
-
-      depositHistory.appendChild(item);
-    });
-
-  } catch (error) {
-    console.error("Deposit history error:", error);
-
-    depositHistory.textContent =
-      "Unable to load deposit history. Check Firestore rules and indexes.";
+  if (file.size > 5 * 1024 * 1024) {
+    els.proof.value = "";
+    els.preview.style.display = "none";
+    showMessage("Image must be 5 MB or smaller.", "error");
+    return;
   }
-}
 
+  els.preview.src = URL.createObjectURL(file);
+  els.preview.style.display = "block";
+  showMessage("");
+});
 
-/* =====================================
-   SUBMIT DEPOSIT REQUEST
-===================================== */
-
-depositForm.addEventListener("submit", async (event) => {
+els.form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   if (!currentUser) {
-    showMessage("Please login first.");
+    showMessage("Please sign in again.", "error");
     return;
   }
 
-  const amount = Number(depositAmount.value);
-  const method = methodSelect.value;
-  const reference = transactionId.value.trim();
-  const note = depositNote.value.trim();
+  const amount = Number(els.amount.value);
+  const methodId = els.method.value;
+  const transactionId = els.transactionId.value.trim();
+  const proof = els.proof.files?.[0];
 
   if (!Number.isFinite(amount) || amount <= 0) {
-    showMessage("Please enter a valid deposit amount.");
+    showMessage("Enter a valid deposit amount.", "error");
     return;
   }
 
-  if (!method) {
-    showMessage("Please select a payment method.");
+  if (!methodId) {
+    showMessage("Please select a payment method.", "error");
     return;
   }
 
-  const account = paymentAccounts[method];
-
-  if (!account || account.type === "unconfigured") {
-    showMessage("This payment method is not configured yet. Please contact Admin.");
+  if (!transactionId) {
+    showMessage("Enter your transaction reference.", "error");
     return;
   }
 
-  if (!reference) {
-    showMessage("Please enter your transaction reference.");
+  if (!proof) {
+    showMessage("Please upload your payment screenshot.", "error");
     return;
   }
 
-  // PromptPay QR is demo only; do not accept it as proof of payment.
-  if (method === "PromptPay") {
-    showMessage(
-      "This is a DEMO PromptPay QR. Configure a real PromptPay receiver before accepting payments."
-    );
+  if (proof.size > 5 * 1024 * 1024) {
+    showMessage("Screenshot must be 5 MB or smaller.", "error");
     return;
   }
 
-  depositBtn.disabled = true;
-  depositBtn.textContent = "Submitting...";
+  const formData = new FormData();
+  formData.append("amount", String(amount));
+  formData.append("methodId", methodId);
+  formData.append("transactionId", transactionId);
+  formData.append("note", els.note.value.trim());
+  formData.append("proof", proof);
+
+  els.submit.disabled = true;
+  els.submit.textContent = "Submitting...";
+  showMessage("Uploading screenshot and submitting your request...");
 
   try {
-    await addDoc(collection(db, "depositRequests"), {
-      uid: currentUser.uid,
-      amount: amount,
-      currency: userCurrency,
-      country: userCountry,
-      paymentMethod: method,
-      paymentBank: account.bank,
-      transactionId: reference,
-      note: note,
-      status: "pending",
-      createdAt: serverTimestamp()
+    const result = await apiRequest("/api/deposits", {
+      method: "POST",
+      body: formData
     });
 
     showMessage(
-      "Deposit request submitted successfully. Waiting for Admin approval.",
-      true
+      result.message || "Deposit request submitted. Please wait for Admin verification.",
+      "success"
     );
 
-    depositForm.reset();
-    paymentInfo.style.display = "none";
+    els.form.reset();
+    els.preview.removeAttribute("src");
+    els.preview.style.display = "none";
 
-    await loadDepositHistory(currentUser.uid);
-
+    await loadDepositHistory();
+    await loadProfile();
   } catch (error) {
-    console.error("Deposit submit error:", error);
-    showMessage("Deposit request failed: " + error.message);
-
+    console.error("Deposit submission error:", error);
+    showMessage(error.message || "Unable to submit deposit request.", "error");
   } finally {
-    depositBtn.disabled = false;
-    depositBtn.textContent = "Submit Deposit Request";
+    els.submit.disabled = false;
+    els.submit.textContent = "Submit Deposit Request";
   }
 });
 
-
-/* =====================================
-   LOGOUT
-===================================== */
-
-logoutBtn.addEventListener("click", async () => {
+els.logout.addEventListener("click", async () => {
   try {
     await signOut(auth);
     window.location.href = "login.html";
   } catch (error) {
-    showMessage("Logout failed: " + error.message);
+    console.error(error);
+    alert("Unable to log out. Please try again.");
   }
 });
-
-
-/* =====================================
-   AUTH STATE
-===================================== */
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -534,11 +358,11 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
 
   try {
-    await loadUserProfile(user);
-    await loadDepositHistory(user.uid);
-
+    await loadProfile();
+    await loadPaymentMethods();
+    await loadDepositHistory();
   } catch (error) {
-    console.error("Profile loading error:", error);
-    showMessage(error.message);
+    console.error("Deposit page initialization error:", error);
+    showMessage(error.message || "Unable to load deposit information.", "error");
   }
 });

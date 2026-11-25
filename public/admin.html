@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | MYZEN MONEY</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f3f6fb;
+      color: #172033;
+      font-family: Arial, sans-serif;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .brand { color: #155eef; font-size: 22px; font-weight: 800; }
+    .card {
+      background: white;
+      padding: 22px;
+      margin-bottom: 18px;
+      border-radius: 15px;
+      box-shadow: 0 5px 24px rgba(20, 40, 80, .07);
+    }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    h2 { font-size: 19px; margin: 0 0 16px; }
+    h3 { font-size: 16px; margin: 0 0 12px; }
+    .muted { color: #667085; font-size: 13px; line-height: 1.6; }
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #d0d5dd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    textarea { min-height: 75px; resize: vertical; }
+    button {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .primary { background: #155eef; color: white; }
+    .success { background: #067647; color: white; }
+    .danger { background: #b42318; color: white; }
+    .secondary { background: #eef2f6; color: #344054; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .message { margin-top: 12px; font-size: 14px; line-height: 1.6; }
+    .error { color: #b42318; }
+    .ok { color: #067647; }
+    .deposit-item, .method-item {
+      padding: 17px 0;
+      border-bottom: 1px solid #eaecf0;
+    }
+    .deposit-item:last-child, .method-item:last-child { border-bottom: 0; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .proof-image {
+      display: block;
+      max-width: 100%;
+      max-height: 360px;
+      margin-top: 12px;
+      border-radius: 10px;
+      border: 1px solid #eaecf0;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      text-transform: capitalize;
+      background: #fff1cc;
+      color: #93370d;
+    }
+    .status.approved { background: #dcfae6; color: #067647; }
+    .status.rejected { background: #fee4e2; color: #b42318; }
+    .method-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .hidden { display: none !important; }
+    .empty { color: #667085; padding: 15px 0; font-size: 14px; }
+    @media (max-width: 650px) {
+      body { padding: 12px; }
+      .card { padding: 16px; }
+      .grid { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <div class="brand">MYZEN MONEY · ADMIN</div>
+      <button id="logoutBtn" class="secondary" type="button">Logout</button>
+    </header>
+
+    <section class="card">
+      <h1>Admin Dashboard</h1>
+      <p class="muted">Review deposit requests, verify payment screenshots, and manage receiving payment methods.</p>
+      <div id="adminMessage" class="message" role="status" aria-live="polite">Checking administrator access...</div>
+    </section>
+
+    <div id="dashboard" class="hidden">
+      <section class="card">
+        <h2>Deposit Requests</h2>
+        <div class="actions">
+          <button id="refreshDeposits" class="primary" type="button">Refresh Requests</button>
+        </div>
+        <div id="depositList" class="empty">Loading requests...</div>
+      </section>
+
+      <section class="card">
+        <h2>Payment Method Settings</h2>
+        <p class="muted">Add the real receiving account details for each payment method. Only enabled methods are shown to users.</p>
+
+        <form id="methodForm">
+          <input id="methodId" type="hidden">
+
+          <div class="grid">
+            <div>
+              <label for="methodCountry">Country</label>
+              <select id="methodCountry" required>
+                <option value="Thailand">Thailand</option>
+                <option value="Myanmar">Myanmar</option>
+              </select>
+            </div>
+            <div>
+              <label for="methodCurrency">Currency</label>
+              <select id="methodCurrency" required>
+                <option value="THB">THB</option>
+                <option value="MMK">MMK</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="methodName">Payment Method Name</label>
+          <input id="methodName" type="text" maxlength="80" placeholder="e.g. PromptPay / KBZPay" required>
+
+          <label for="methodBank">Bank / Provider</label>
+          <input id="methodBank" type="text" maxlength="100" placeholder="Bank or wallet provider">
+
+          <label for="methodAccountName">Account Holder Name</label>
+          <input id="methodAccountName" type="text" maxlength="120" placeholder="Real account holder name" required>
+
+          <label for="methodAccountNumber">Account Number / Phone Number</label>
+          <input id="methodAccountNumber" type="text" maxlength="100" placeholder="Real receiving account number" required>
+
+          <label for="methodInstructions">Payment Instructions</label>
+          <textarea id="methodInstructions" maxlength="500" placeholder="Instructions for customers"></textarea>
+
+          <label>
+            <input id="methodEnabled" type="checkbox" checked style="width:auto">
+            Enable this payment method
+          </label>
+
+          <div class="actions">
+            <button id="saveMethodBtn" class="primary" type="submit">Save Payment Method</button>
+            <button id="cancelEditBtn" class="secondary" type="button">Clear Form</button>
+          </div>
+          <div id="methodMessage" class="message"></div>
+        </form>
+
+        <h3 style="margin-top:25px">Configured Payment Methods</h3>
+        <div id="methodList" class="empty">Loading payment methods...</div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="js/admin.js?v=20261125"></script>
+</body>
+</html>
