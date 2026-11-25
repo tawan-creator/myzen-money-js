@@ -1,0 +1,311 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | MYZEN MONEY</title>
+<style>
+:root {
+  --navy:#101828;
+  --blue:#2563eb;
+  --bg:#f4f7fc;
+  --text:#172033;
+  --muted:#667085;
+  --border:#eaecf0;
+  --green:#067647;
+  --red:#b42318;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+}
+.topbar {
+  background:var(--navy);
+  color:white;
+  padding:17px 24px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+.brand { font-size:20px;font-weight:800;letter-spacing:.4px; }
+.brand span { color:#60a5fa; }
+.container { max-width:1200px;margin:auto;padding:25px 20px; }
+.welcome {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:22px;
+}
+h1 { font-size:25px;margin:0 0 7px; }
+h2 { font-size:19px;margin:0 0 15px; }
+h3 { font-size:16px;margin:0 0 10px; }
+.muted { color:var(--muted);font-size:13px;line-height:1.6; }
+.card {
+  background:white;
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  box-shadow:0 4px 18px rgba(16,24,40,.045);
+  margin-bottom:20px;
+}
+.stats {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:15px;
+  margin-bottom:20px;
+}
+.stat {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:19px;
+  min-width:0;
+}
+.stat-label { color:var(--muted);font-size:13px;font-weight:600; }
+.stat-value { font-size:27px;font-weight:800;margin-top:12px; }
+.stat-note { font-size:12px;color:var(--muted);margin-top:5px; }
+.grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+label {
+  display:block;
+  margin:12px 0 6px;
+  font-size:14px;
+  font-weight:700;
+}
+input,select,textarea {
+  width:100%;
+  padding:11px 12px;
+  border:1px solid #d0d5dd;
+  border-radius:8px;
+  font-size:14px;
+  background:white;
+}
+input:focus,select:focus,textarea:focus {
+  outline:2px solid #bfdbfe;
+  border-color:var(--blue);
+}
+textarea { min-height:80px;resize:vertical; }
+button {
+  padding:10px 15px;
+  border:0;
+  border-radius:8px;
+  font-weight:700;
+  cursor:pointer;
+}
+button:disabled { opacity:.55;cursor:not-allowed; }
+.primary { background:var(--blue);color:white; }
+.success { background:var(--green);color:white; }
+.danger { background:var(--red);color:white; }
+.secondary { background:#eef2f6;color:#344054; }
+.actions { display:flex;gap:8px;flex-wrap:wrap;margin-top:13px; }
+.message { margin-top:12px;font-size:14px;line-height:1.6; }
+.error { color:var(--red); }
+.ok { color:var(--green); }
+.deposit-item,.method-item {
+  padding:18px 0;
+  border-bottom:1px solid var(--border);
+}
+.deposit-item:last-child,.method-item:last-child { border-bottom:0; }
+.method-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.status {
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700;
+  background:#fff1cc;
+  color:#93370d;
+}
+.status.approved { background:#dcfae6;color:var(--green); }
+.status.rejected { background:#fee4e2;color:var(--red); }
+.proof-image {
+  display:block;
+  max-width:100%;
+  max-height:360px;
+  margin-top:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+}
+.empty { color:var(--muted);padding:16px 0;font-size:14px; }
+.hidden { display:none!important; }
+.section-heading {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.checkbox-line {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin-top:15px;
+}
+.checkbox-line input { width:auto; }
+.checkbox-line label { margin:0; }
+footer {
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  padding:15px;
+}
+@media(max-width:850px) {
+  .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:600px) {
+  .container { padding:16px 12px; }
+  .card { padding:16px; }
+  .grid { grid-template-columns:1fr; }
+  .topbar { padding:15px; }
+  .brand { font-size:17px; }
+  .stat { padding:15px; }
+  .stat-value { font-size:23px; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">MYZEN <span>MONEY</span> · ADMIN</div>
+  <button id="logoutBtn" class="secondary" type="button">Logout</button>
+</header>
+
+<main class="container">
+
+  <section class="welcome">
+    <div>
+      <h1>Admin Control Panel</h1>
+      <p class="muted">Manage deposits and receiving payment methods.</p>
+    </div>
+    <div id="adminMessage" class="message" role="status" aria-live="polite">
+      Checking administrator access...
+    </div>
+  </section>
+
+  <div id="dashboard" class="hidden">
+
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-label">Total Deposit Requests</div>
+        <div class="stat-value" id="statTotal">--</div>
+        <div class="stat-note">All submitted requests</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Pending Deposits</div>
+        <div class="stat-value" id="statPending">--</div>
+        <div class="stat-note">Awaiting verification</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Approved Deposits</div>
+        <div class="stat-value" id="statApproved">--</div>
+        <div class="stat-note">Approved requests</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Active Payment Methods</div>
+        <div class="stat-value" id="statMethods">--</div>
+        <div class="stat-note">Enabled receiving methods</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <h2>Deposit Management</h2>
+          <p class="muted">Review payment requests and verify actual received funds.</p>
+        </div>
+        <button id="refreshDeposits" class="primary" type="button">Refresh Requests</button>
+      </div>
+      <div id="depositList" class="empty">Loading requests...</div>
+    </section>
+
+    <section class="card">
+      <h2>Payment Method Settings</h2>
+      <p class="muted">
+        Configure your real receiving accounts. Only enabled methods are displayed to customers.
+      </p>
+
+      <form id="methodForm">
+        <input id="methodId" type="hidden">
+
+        <div class="grid">
+          <div>
+            <label for="methodCountry">Country</label>
+            <select id="methodCountry" required>
+              <option value="Thailand">Thailand</option>
+              <option value="Myanmar">Myanmar</option>
+            </select>
+          </div>
+          <div>
+            <label for="methodCurrency">Currency</label>
+            <select id="methodCurrency" required>
+              <option value="THB">THB</option>
+              <option value="MMK">MMK</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="methodName">Payment Method Name</label>
+        <input id="methodName" type="text" maxlength="80"
+          placeholder="e.g. PromptPay / KBZPay" required>
+
+        <label for="methodBank">Bank / Provider</label>
+        <input id="methodBank" type="text" maxlength="100"
+          placeholder="Bank or wallet provider">
+
+        <label for="methodAccountName">Account Holder Name</label>
+        <input id="methodAccountName" type="text" maxlength="120"
+          placeholder="Real account holder name" required>
+
+        <label for="methodAccountNumber">Account Number / Phone Number</label>
+        <input id="methodAccountNumber" type="text" maxlength="100"
+          placeholder="Real receiving account number" required>
+
+        <label for="methodInstructions">Payment Instructions</label>
+        <textarea id="methodInstructions" maxlength="500"
+          placeholder="Instructions for customers"></textarea>
+
+        <div class="checkbox-line">
+          <input id="methodEnabled" type="checkbox" checked>
+          <label for="methodEnabled">Enable this payment method</label>
+        </div>
+
+        <div class="actions">
+          <button id="saveMethodBtn" class="primary" type="submit">Save Payment Method</button>
+          <button id="cancelEditBtn" class="secondary" type="button">Clear Form</button>
+        </div>
+        <div id="methodMessage" class="message" role="status" aria-live="polite"></div>
+      </form>
+
+      <hr style="border:0;border-top:1px solid #eaecf0;margin:25px 0">
+
+      <div class="section-heading">
+        <h3>Configured Payment Methods</h3>
+        <button id="refreshMethods" class="secondary" type="button">Refresh Methods</button>
+      </div>
+      <div id="methodList" class="empty">Loading payment methods...</div>
+    </section>
+
+  </div>
+</main>
+
+<footer>MYZEN MONEY · Secure Administration</footer>
+
+<script type="module" src="js/admin.js?v=20261125"></script>
+</body>
+</html>

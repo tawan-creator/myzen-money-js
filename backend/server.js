@@ -3,8 +3,7 @@
 
 // ==========================================
 // MYZEN MONEY - PRODUCTION WALLET BACKEND
-// Wallet-to-Wallet Internal Transfers
-// Deposit API + Admin Approval
+// Wallet Transfers + Deposits + Admin Users
 // Firebase Admin SDK v14
 // ==========================================
 
@@ -31,11 +30,13 @@ const {
 } = require("firebase-admin/auth");
 
 // ==========================================
-// EXPRESS CONFIGURATION
+// CONFIGURATION
 // ==========================================
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+
+const ADMIN_EMAIL = "tharwaiphyol@gmail.com";
 
 app.disable("x-powered-by");
 
@@ -205,7 +206,9 @@ function moneyToMinorUnits(amount, currency) {
   if (currency === "THB") {
     minorUnits = Math.round(amount * 100);
 
-    if (Math.abs(amount * 100 - minorUnits) > 0.000001) {
+    if (
+      Math.abs(amount * 100 - minorUnits) > 0.000001
+    ) {
       return null;
     }
 
@@ -311,7 +314,6 @@ async function requireAuth(req, res, next) {
       admin: decodedToken.admin === true
     };
 
-    // Firebase Admin Auth instance for deposit bootstrap
     req.firebaseAuth = firebaseAuth;
 
     return next();
@@ -326,6 +328,38 @@ async function requireAuth(req, res, next) {
       res,
       401,
       "Invalid or expired login session. Please log in again."
+    );
+  }
+}
+
+// ==========================================
+// ADMIN AUTHORIZATION
+// ==========================================
+
+async function requireAdmin(req, res, next) {
+  try {
+    if (
+      !req.user ||
+      req.user.admin !== true ||
+      String(req.user.email || "").toLowerCase() !==
+        ADMIN_EMAIL.toLowerCase()
+    ) {
+      return sendError(
+        res,
+        403,
+        "Admin access denied."
+      );
+    }
+
+    return next();
+
+  } catch (error) {
+    console.error("ADMIN AUTH ERROR:", error);
+
+    return sendError(
+      res,
+      500,
+      "Unable to verify admin access."
     );
   }
 }
@@ -563,7 +597,6 @@ app.post(
 
       return res.json({
         success: true,
-
         message: "Recipient found successfully.",
 
         recipient: {
@@ -616,8 +649,6 @@ app.post(
       const note = String(
         req.body.note || ""
       ).trim().slice(0, 200);
-
-      // INPUT VALIDATION
 
       if (!/^\d{6}$/.test(code)) {
         return sendError(
@@ -681,8 +712,6 @@ app.post(
         );
       }
 
-      // FIRESTORE REFERENCES
-
       const senderRef = db
         .collection("users")
         .doc(req.user.uid);
@@ -707,15 +736,11 @@ app.post(
         .collection("walletLedger")
         .doc(transferId + "_CREDIT");
 
-      // ATOMIC FIRESTORE TRANSACTION
-
       const result = await db.runTransaction(
         async (transaction) => {
 
           const existingTransferSnap =
             await transaction.get(transferRef);
-
-          // IDEMPOTENCY / RETRY PROTECTION
 
           if (existingTransferSnap.exists) {
             const existing = existingTransferSnap.data();
@@ -728,15 +753,11 @@ app.post(
               existing.currency === currency;
 
             if (!sameRequest) {
-              throw new Error(
-                "DUPLICATE_TRANSFER_ID"
-              );
+              throw new Error("DUPLICATE_TRANSFER_ID");
             }
 
             if (existing.status !== "completed") {
-              throw new Error(
-                "TRANSFER_NOT_COMPLETED"
-              );
+              throw new Error("TRANSFER_NOT_COMPLETED");
             }
 
             return {
@@ -758,8 +779,6 @@ app.post(
           const codeSnap =
             await transaction.get(codeRef);
 
-          // CHECK SENDER
-
           if (!senderSnap.exists) {
             throw new Error("SENDER_NOT_FOUND");
           }
@@ -770,8 +789,6 @@ app.post(
             throw new Error("SENDER_NOT_APPROVED");
           }
 
-          // CHECK RECIPIENT
-
           if (!recipientSnap.exists) {
             throw new Error("RECIPIENT_NOT_FOUND");
           }
@@ -781,8 +798,6 @@ app.post(
           if (recipient.status !== "approved") {
             throw new Error("RECIPIENT_NOT_APPROVED");
           }
-
-          // CHECK RECEIVE CODE
 
           if (!codeSnap.exists) {
             throw new Error("RECEIVE_CODE_NOT_FOUND");
@@ -796,8 +811,6 @@ app.post(
           if (linkedUid !== recipientUid) {
             throw new Error("RECEIVE_CODE_MISMATCH");
           }
-
-          // CHECK COUNTRY AND CURRENCY
 
           const senderCountry = normalizeCountry(
             sender.country
@@ -822,19 +835,11 @@ app.post(
             throw new Error("CURRENCY_MISMATCH");
           }
 
-          // CHECK BALANCES
-
           const senderBalanceMinor =
-            balanceToMinorUnits(
-              sender.balance,
-              currency
-            );
+            balanceToMinorUnits(sender.balance, currency);
 
           const recipientBalanceMinor =
-            balanceToMinorUnits(
-              recipient.balance,
-              currency
-            );
+            balanceToMinorUnits(recipient.balance, currency);
 
           if (senderBalanceMinor === null) {
             throw new Error("INVALID_SENDER_BALANCE");
@@ -878,8 +883,6 @@ app.post(
             currency
           );
 
-          // UPDATE BOTH WALLETS
-
           transaction.update(senderRef, {
             balance: senderAfter,
             updatedAt: FieldValue.serverTimestamp()
@@ -889,8 +892,6 @@ app.post(
             balance: recipientAfter,
             updatedAt: FieldValue.serverTimestamp()
           });
-
-          // TRANSFER HISTORY
 
           transaction.set(transferRef, {
             transferId,
@@ -922,8 +923,6 @@ app.post(
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp()
           });
-
-          // DOUBLE-SIDED WALLET LEDGER
 
           transaction.set(senderLedgerRef, {
             ledgerId: transferId + "_DEBIT",
@@ -1093,6 +1092,118 @@ app.use(
 );
 
 // ==========================================
+// ADMIN USER MANAGEMENT
+// GET /api/admin/users
+// ==========================================
+
+app.get(
+  "/api/admin/users",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const users = [];
+      let pageToken;
+
+      do {
+        const result = await firebaseAuth.listUsers(
+          1000,
+          pageToken
+        );
+
+        const authUsers = result.users || [];
+
+        for (let i = 0; i < authUsers.length; i += 100) {
+          const batch = authUsers.slice(i, i + 100);
+
+          const refs = batch.map(user =>
+            db.collection("users").doc(user.uid)
+          );
+
+          const snapshots = await db.getAll(...refs);
+
+          for (let j = 0; j < batch.length; j++) {
+            const authUser = batch[j];
+            const profileSnap = snapshots[j];
+
+            const profile = profileSnap.exists
+              ? profileSnap.data()
+              : {};
+
+            users.push({
+              uid: authUser.uid,
+
+              name:
+                profile.name ||
+                authUser.displayName ||
+                "",
+
+              email:
+                profile.email ||
+                authUser.email ||
+                "",
+
+              status:
+                String(profile.status || "unknown")
+                  .toLowerCase(),
+
+              createdAt:
+                authUser.metadata.creationTime || null,
+
+              lastSignInTime:
+                authUser.metadata.lastSignInTime || null,
+
+              online: false
+            });
+          }
+        }
+
+        pageToken = result.pageToken;
+
+      } while (pageToken);
+
+      users.sort((a, b) => {
+        return new Date(b.createdAt || 0) -
+               new Date(a.createdAt || 0);
+      });
+
+      const approvedUsers = users.filter(
+        user => user.status === "approved"
+      ).length;
+
+      const pendingUsers = users.filter(
+        user => user.status === "pending"
+      ).length;
+
+      return res.json({
+        success: true,
+
+        stats: {
+          totalUsers: users.length,
+          activeUsers: 0,
+          approvedUsers,
+          pendingUsers
+        },
+
+        users
+      });
+
+    } catch (error) {
+      console.error(
+        "ADMIN USERS API ERROR:",
+        error
+      );
+
+      return sendError(
+        res,
+        500,
+        "Unable to load users."
+      );
+    }
+  }
+);
+
+// ==========================================
 // UNKNOWN API ROUTE
 // ==========================================
 
@@ -1132,5 +1243,6 @@ app.listen(PORT, () => {
   console.log("PORT:", PORT);
   console.log("TRANSFER MODE: WALLET_TO_WALLET");
   console.log("DEPOSIT API: ENABLED");
+  console.log("ADMIN USER MANAGEMENT: ENABLED");
   console.log("--------------------------------");
 });

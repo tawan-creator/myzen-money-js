@@ -519,6 +519,11 @@ button:disabled {
   color:#fda4af;
 }
 
+.status.pending {
+  background:rgba(232,189,104,.15);
+  color:var(--gold-light);
+}
+
 .proof-image {
   display:block;
   max-width:100%;
@@ -676,21 +681,6 @@ hr {
   min-width:115px;
 }
 
-.status.pending {
-  background:rgba(232,189,104,.15);
-  color:var(--gold-light);
-}
-
-.status.approved {
-  background:rgba(52,211,153,.13);
-  color:#6ee7b7;
-}
-
-.status.rejected {
-  background:rgba(251,113,133,.13);
-  color:#fda4af;
-}
-
 /* QR UPLOAD */
 
 .qr-preview {
@@ -733,6 +723,87 @@ hr {
   font-size:12px;
   margin-top:10px;
   overflow-wrap:anywhere;
+}
+
+/* USER MANAGEMENT */
+
+.user-stats {
+  margin-top:20px;
+}
+
+.user-item {
+  padding:19px;
+  margin:12px 0;
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:14px;
+  background:rgba(8,17,31,.42);
+  transition:.2s;
+}
+
+.user-item:hover {
+  background:rgba(25,42,65,.7);
+  border-color:rgba(232,189,104,.3);
+}
+
+.user-item p {
+  color:#c5d0df;
+  font-size:13px;
+  line-height:1.7;
+  overflow-wrap:anywhere;
+  margin:8px 0;
+}
+
+.user-item strong {
+  color:var(--gold-light);
+}
+
+.user-online {
+  color:#6ee7b7;
+  background:rgba(52,211,153,.13);
+}
+
+.user-offline {
+  color:#94a3b8;
+  background:rgba(148,163,184,.13);
+}
+
+.user-stats .stat {
+  min-width:0;
+}
+
+.user-search-wrap {
+  margin-bottom:15px;
+}
+
+.user-search-wrap input {
+  min-height:52px;
+}
+
+.user-name {
+  color:var(--gold-light);
+  font-size:16px;
+  font-weight:900;
+  overflow-wrap:anywhere;
+}
+
+.user-meta {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+
+.user-meta .status {
+  text-transform:uppercase;
+}
+
+.user-empty {
+  text-align:center;
+  padding:30px 15px;
+  color:var(--muted);
+  border:1px dashed var(--border);
+  border-radius:13px;
+  background:rgba(8,17,31,.25);
 }
 
 /* FOOTER */
@@ -837,7 +908,8 @@ footer span { color:var(--gold); }
 
   .deposit-item,
   .method-item,
-  .transfer-item {
+  .transfer-item,
+  .user-item {
     padding:16px 12px;
   }
 
@@ -847,6 +919,10 @@ footer span { color:var(--gold); }
 
   .transfer-actions button {
     flex:1;
+  }
+
+  .user-stats {
+    grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
 
@@ -897,6 +973,11 @@ footer span { color:var(--gold); }
         Overview
       </a>
 
+      <a class="nav-link" href="#user-management">
+        <span class="nav-icon">♙</span>
+        User Management
+      </a>
+
       <a class="nav-link" href="#deposits">
         <span class="nav-icon">▤</span>
         Deposits
@@ -942,6 +1023,8 @@ footer span { color:var(--gold); }
 
     <div id="dashboard" class="hidden">
 
+      <!-- DASHBOARD STATISTICS -->
+
       <section class="stats">
 
         <div class="stat">
@@ -974,6 +1057,82 @@ footer span { color:var(--gold); }
 
       </section>
 
+      <!-- USER MANAGEMENT -->
+
+      <section class="card" id="user-management">
+
+        <div class="section-heading">
+          <div class="heading-left">
+            <div class="heading-icon">♙</div>
+            <div>
+              <h2>User Management</h2>
+              <p class="muted">
+                View registered users and check their account approval status.
+              </p>
+            </div>
+          </div>
+
+          <button id="refreshUsers" class="primary" type="button">
+            ↻ Refresh Users
+          </button>
+        </div>
+
+        <div class="stats user-stats">
+
+          <div class="stat">
+            <div class="stat-icon">♙</div>
+            <div class="stat-label">TOTAL USERS</div>
+            <div class="stat-value" id="statTotalUsers">--</div>
+            <div class="stat-note">All registered accounts</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-icon">●</div>
+            <div class="stat-label">ACTIVE USERS</div>
+            <div class="stat-value" id="statActiveUsers">--</div>
+            <div class="stat-note">Currently online</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-icon">✓</div>
+            <div class="stat-label">APPROVED USERS</div>
+            <div class="stat-value" id="statApprovedUsers">--</div>
+            <div class="stat-note">Approved accounts</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-icon">◷</div>
+            <div class="stat-label">PENDING USERS</div>
+            <div class="stat-value" id="statPendingUsers">--</div>
+            <div class="stat-note">Awaiting approval</div>
+          </div>
+
+        </div>
+
+        <div class="user-search-wrap">
+          <label for="userSearch">SEARCH USERS</label>
+
+          <input
+            id="userSearch"
+            type="search"
+            placeholder="Search by name, email or UID..."
+            autocomplete="off"
+          >
+        </div>
+
+        <div
+          id="userMessage"
+          class="message"
+          role="status"
+          aria-live="polite">
+        </div>
+
+        <div id="userList" class="empty">
+          Loading users...
+        </div>
+
+      </section>
+
       <!-- EXCHANGE RATE MANAGEMENT -->
 
       <section class="card" id="exchange-rates">
@@ -1002,9 +1161,7 @@ footer span { color:var(--gold); }
               Myanmar Kyat received for 1 Thai Baht.
             </p>
 
-            <label for="thbToMmk">
-              1 THB = ? MMK
-            </label>
+            <label for="thbToMmk">1 THB = ? MMK</label>
 
             <input
               id="thbToMmk"
@@ -1032,9 +1189,7 @@ footer span { color:var(--gold); }
               Thai Baht received for 1 Myanmar Kyat.
             </p>
 
-            <label for="mmkToThb">
-              1 MMK = ? THB
-            </label>
+            <label for="mmkToThb">1 MMK = ? THB</label>
 
             <input
               id="mmkToThb"
@@ -1063,12 +1218,7 @@ footer span { color:var(--gold); }
           automatically applied. Each direction is saved independently.
         </div>
 
-        <div
-          id="rateMessage"
-          class="message"
-          role="status"
-          aria-live="polite">
-        </div>
+        <div id="rateMessage" class="message" role="status" aria-live="polite"></div>
 
       </section>
 
@@ -1131,9 +1281,7 @@ footer span { color:var(--gold); }
           automatically through the backend.
         </div>
 
-        <div
-          id="internationalTransferList"
-          class="empty">
+        <div id="internationalTransferList" class="empty">
           Loading international transfers...
         </div>
 
