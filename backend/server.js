@@ -1204,6 +1204,126 @@ app.get(
 );
 
 // ==========================================
+// APPROVE USER
+// POST /api/admin/users/:uid/approve
+// ==========================================
+
+app.post(
+  "/api/admin/users/:uid/approve",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const uid = String(req.params.uid || "").trim();
+
+      if (
+        !uid ||
+        uid.length > 128 ||
+        uid.includes("/")
+      ) {
+        return sendError(
+          res,
+          400,
+          "Invalid user ID."
+        );
+      }
+
+      const userRef = db
+        .collection("users")
+        .doc(uid);
+
+      const result = await db.runTransaction(
+        async (transaction) => {
+          const userSnap = await transaction.get(userRef);
+
+          if (!userSnap.exists) {
+            throw new Error("USER_PROFILE_NOT_FOUND");
+          }
+
+          const user = userSnap.data();
+
+          const status = String(
+            user.status || ""
+          ).toLowerCase();
+
+          if (status === "approved") {
+            throw new Error("USER_ALREADY_APPROVED");
+          }
+
+          if (status !== "pending") {
+            throw new Error("USER_NOT_PENDING");
+          }
+
+          transaction.update(userRef, {
+            status: "approved",
+            approvedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
+          });
+
+          return {
+            uid,
+            name: user.name || "",
+            email: user.email || ""
+          };
+        }
+      );
+
+      console.log(
+        "USER APPROVED:",
+        result.uid,
+        "BY:",
+        req.user.email
+      );
+
+      return res.json({
+        success: true,
+        message: "User approved successfully.",
+        user: result
+      });
+
+    } catch (error) {
+      console.error(
+        "APPROVE USER ERROR:",
+        error
+      );
+
+      const errors = {
+        USER_PROFILE_NOT_FOUND: {
+          status: 404,
+          message: "User profile not found."
+        },
+
+        USER_ALREADY_APPROVED: {
+          status: 400,
+          message: "This user is already approved."
+        },
+
+        USER_NOT_PENDING: {
+          status: 400,
+          message: "This user is not pending approval."
+        }
+      };
+
+      const knownError = errors[error.message];
+
+      if (knownError) {
+        return sendError(
+          res,
+          knownError.status,
+          knownError.message
+        );
+      }
+
+      return sendError(
+        res,
+        500,
+        "Unable to approve user."
+      );
+    }
+  }
+);
+
+// ==========================================
 // UNKNOWN API ROUTE
 // ==========================================
 
@@ -1244,5 +1364,6 @@ app.listen(PORT, () => {
   console.log("TRANSFER MODE: WALLET_TO_WALLET");
   console.log("DEPOSIT API: ENABLED");
   console.log("ADMIN USER MANAGEMENT: ENABLED");
+  console.log("ADMIN USER APPROVAL: ENABLED");
   console.log("--------------------------------");
 });
