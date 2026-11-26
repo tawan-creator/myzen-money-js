@@ -21,6 +21,10 @@ const els = {
 let allTransactions = [];
 let currentFilter = "all";
 
+// ==========================================
+// FORMAT AMOUNT
+// ==========================================
+
 function formatAmount(amount, currency) {
   const value = Number(amount);
 
@@ -33,6 +37,10 @@ function formatAmount(amount, currency) {
     maximumFractionDigits: 2
   }) + " " + (currency || "");
 }
+
+// ==========================================
+// FORMAT DATE
+// ==========================================
 
 function formatDate(value) {
   if (!value) return "Date unavailable";
@@ -51,6 +59,10 @@ function formatDate(value) {
     ? "Date unavailable"
     : date.toLocaleString();
 }
+
+// ==========================================
+// TRANSACTION TYPE
+// ==========================================
 
 function getTransactionType(tx) {
   const type = String(tx.type || "").toLowerCase();
@@ -132,6 +144,10 @@ function getAmountPrefix(tx) {
   return "";
 }
 
+// ==========================================
+// CREATE ELEMENT
+// ==========================================
+
 function createElement(tag, className, text) {
   const element = document.createElement(tag);
 
@@ -148,6 +164,7 @@ function createElement(tag, className, text) {
 
 // ==========================================
 // ADMIN STATUS
+// International Transfer + Other History
 // Approved = Complete
 // Rejected = Reject
 // Pending = Pending
@@ -161,7 +178,6 @@ function normalizeStatus(value) {
 }
 
 function getStatus(tx) {
-  // Prefer explicit admin approval fields.
   const adminStatus =
     tx.adminStatus ??
     tx.admin_status ??
@@ -215,17 +231,23 @@ function getStatus(tx) {
 
   return rawStatus
     .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    .replace(/\b\w/g, letter => letter.toUpperCase());
 }
 
 function getStatusClass(status) {
   const normalized = normalizeStatus(status);
 
-  if (normalized === "complete" || normalized === "completed") {
+  if (
+    normalized === "complete" ||
+    normalized === "completed"
+  ) {
     return "completed";
   }
 
-  if (normalized === "reject" || normalized === "rejected") {
+  if (
+    normalized === "reject" ||
+    normalized === "rejected"
+  ) {
     return "rejected";
   }
 
@@ -235,6 +257,10 @@ function getStatusClass(status) {
 
   return normalized || "pending";
 }
+
+// ==========================================
+// REFERENCE
+// ==========================================
 
 function getReference(tx) {
   return (
@@ -248,6 +274,10 @@ function getReference(tx) {
     "Not available"
   );
 }
+
+// ==========================================
+// FEE AND TOTAL
+// ==========================================
 
 function getFee(tx) {
   const fee = Number(
@@ -276,6 +306,10 @@ function getTotal(tx) {
   return Number(tx.amount || 0) + getFee(tx);
 }
 
+// ==========================================
+// GET FIRST AVAILABLE VALUE
+// ==========================================
+
 function getFirstValue(tx, keys) {
   for (const key of keys) {
     const value = tx[key];
@@ -293,7 +327,7 @@ function getFirstValue(tx, keys) {
 }
 
 // ==========================================
-// RECEIPT CSS
+// RECEIPT STYLES
 // ==========================================
 
 function addReceiptStyles() {
@@ -539,6 +573,10 @@ function addReceiptStyles() {
   document.head.appendChild(style);
 }
 
+// ==========================================
+// RECEIPT ROW
+// ==========================================
+
 function addReceiptRow(container, label, value) {
   if (
     value === undefined ||
@@ -547,11 +585,16 @@ function addReceiptRow(container, label, value) {
   ) return;
 
   const row = createElement("div", "myzen-receipt-row");
+
   row.appendChild(createElement("span", "", label));
   row.appendChild(createElement("strong", "", value));
 
   container.appendChild(row);
 }
+
+// ==========================================
+// CLOSE RECEIPT
+// ==========================================
 
 function closeReceipt() {
   const overlay = $("myzenReceiptOverlay");
@@ -648,11 +691,7 @@ function openReceipt(tx) {
     )
   );
 
-  addReceiptRow(
-    body,
-    "Reference ID",
-    getReference(tx)
-  );
+  addReceiptRow(body, "Reference ID", getReference(tx));
 
   addReceiptRow(
     body,
@@ -707,13 +746,26 @@ function openReceipt(tx) {
     "bank"
   ]);
 
+  const country = getFirstValue(tx, [
+    "country",
+    "destinationCountry",
+    "recipientCountry"
+  ]);
+
   const note = getFirstValue(tx, [
     "note",
     "description",
     "remark"
   ]);
 
-  if (sender || recipient || account || bank || note) {
+  if (
+    sender ||
+    recipient ||
+    account ||
+    bank ||
+    country ||
+    note
+  ) {
     body.appendChild(
       createElement(
         "div",
@@ -724,6 +776,7 @@ function openReceipt(tx) {
 
     addReceiptRow(body, "Sender", sender);
     addReceiptRow(body, "Recipient", recipient);
+    addReceiptRow(body, "Country", country);
     addReceiptRow(body, "Bank", bank);
     addReceiptRow(body, "Account Number", account);
     addReceiptRow(body, "Note", note);
@@ -873,6 +926,7 @@ function renderTransactions() {
 
     transaction.setAttribute("role", "button");
     transaction.setAttribute("tabindex", "0");
+
     transaction.setAttribute(
       "aria-label",
       "View " + getTransactionTitle(tx) + " receipt"
@@ -899,11 +953,10 @@ function renderTransactions() {
     );
 
     const status = getStatus(tx);
-    const statusClass = getStatusClass(status);
 
     const statusElement = createElement(
       "span",
-      "status " + statusClass,
+      "status " + getStatusClass(status),
       status
     );
 
@@ -942,7 +995,7 @@ function renderTransactions() {
 }
 
 // ==========================================
-// LOAD HISTORY FROM BACKEND
+// LOAD HISTORY
 // ==========================================
 
 async function loadHistory(user) {
@@ -979,6 +1032,7 @@ async function loadHistory(user) {
     }
 
     allTransactions = result.transactions;
+
     renderTransactions();
 
   } catch (error) {
@@ -1012,7 +1066,7 @@ els.filters.forEach((button) => {
 });
 
 // ==========================================
-// CLOSE RECEIPT WITH ESCAPE
+// ESCAPE TO CLOSE
 // ==========================================
 
 document.addEventListener("keydown", (event) => {
