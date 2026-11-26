@@ -1,16 +1,25 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#c7a24b">
 
-  
   <script>
     (() => {
       try {
-        const saved = JSON.parse(localStorage.getItem("myzen_settings") || "{}");
-        const theme = saved.theme || localStorage.getItem("myzen_theme") || "light";
+        const saved = JSON.parse(
+          localStorage.getItem("myzen_settings") || "{}"
+        );
+
+        const theme =
+          saved.theme ||
+          localStorage.getItem("myzen_theme") ||
+          "light";
+
         const valid = theme === "dark" ? "dark" : "light";
+
         document.documentElement.dataset.theme = valid;
         document.documentElement.style.colorScheme = valid;
       } catch (error) {
@@ -18,10 +27,13 @@
       }
     })();
   </script>
-<title>MYZEN MONEY - Transaction History</title>
+
+  <title>MYZEN MONEY - Transaction History</title>
 
   <link rel="icon" href="favicon.png">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/theme.css?v=20261127">
+  <link rel="stylesheet" href="css/history-settings.css?v=20261127">
 
   <style>
     * {
@@ -30,15 +42,21 @@
 
     body {
       margin: 0;
-      background: #f4f7fb;
+      background: #f4f2ec;
       font-family: Arial, sans-serif;
-      color: #172033;
+      color: #191919;
+    }
+
+    html[data-theme="dark"] body {
+      background: #090909;
+      color: #f4eee0;
     }
 
     .header {
-      background: #1769e0;
-      color: white;
+      background: #151515;
+      color: #e2c16f;
       padding: 20px;
+      border-bottom: 1px solid #5b4825;
     }
 
     .header-content {
@@ -50,7 +68,7 @@
     }
 
     .back {
-      color: white;
+      color: #e2c16f;
       text-decoration: none;
       font-size: 25px;
     }
@@ -58,6 +76,7 @@
     .header h2 {
       margin: 0;
       font-size: 21px;
+      color: #e2c16f;
     }
 
     .container {
@@ -67,20 +86,32 @@
     }
 
     .summary {
-      background: white;
+      background: #fff;
+      color: #191919;
+      border: 1px solid #e3d5b5;
       border-radius: 14px;
       padding: 18px;
       margin-bottom: 18px;
       box-shadow: 0 3px 12px rgba(0,0,0,.05);
     }
 
+    html[data-theme="dark"] .summary {
+      background: #171717;
+      color: #f4eee0;
+      border-color: #514124;
+    }
+
     .summary small {
-      color: #718096;
+      color: #77736a;
+    }
+
+    html[data-theme="dark"] .summary small {
+      color: #b6a77f;
     }
 
     .summary h2 {
       margin: 8px 0 0;
-      color: #1769e0;
+      color: #b38b35;
       font-size: 25px;
     }
 
@@ -92,30 +123,46 @@
     }
 
     .filter {
-      border: 1px solid #dce4ef;
-      background: white;
-      color: #536174;
+      border: 1px solid #d8c9a8;
+      background: #fff;
+      color: #65532e;
       border-radius: 20px;
       padding: 9px 15px;
       white-space: nowrap;
       cursor: pointer;
     }
 
+    html[data-theme="dark"] .filter {
+      background: #171717;
+      color: #e2c16f;
+      border-color: #514124;
+    }
+
     .filter.active {
-      background: #1769e0;
-      color: white;
-      border-color: #1769e0;
+      background: #c7a24b;
+      color: #17130b;
+      border-color: #c7a24b;
+      font-weight: 800;
     }
 
     .transaction {
       display: flex;
       align-items: center;
       gap: 12px;
-      background: white;
+      background: #fff;
+      color: #191919;
       padding: 15px;
+      border: 1px solid #e7dfce;
       border-radius: 13px;
       margin-bottom: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,.04);
+      cursor: pointer;
+    }
+
+    html[data-theme="dark"] .transaction {
+      background: #171717;
+      color: #f4eee0;
+      border-color: #40351f;
     }
 
     .tx-icon {
@@ -126,7 +173,8 @@
       align-items: center;
       justify-content: center;
       font-size: 20px;
-      background: #eaf2ff;
+      background: #f4ecd9;
+      color: #a47b29;
       flex-shrink: 0;
     }
 
@@ -154,11 +202,11 @@
     }
 
     .credit {
-      color: #16a36a;
+      color: #168653;
     }
 
     .debit {
-      color: #e04b4b;
+      color: #d64b4b;
     }
 
     .status {
@@ -178,7 +226,8 @@
     }
 
     .status.rejected,
-    .status.failed {
+    .status.failed,
+    .status.cancelled {
       background: #ffe8e8;
       color: #c63838;
     }
@@ -207,8 +256,6 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="css/theme.css?v=20261127">
-  <link rel="stylesheet" href="css/history-settings.css?v=20261127">
 </head>
 
 <body>
@@ -246,7 +293,7 @@
 
   </main>
 
-  <script type="module" src="js/history.js?v=20261126-2"></script>
+  <script type="module" src="js/history.js?v=20261127-3"></script>
 
 </body>
 </html>
