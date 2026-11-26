@@ -6,7 +6,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta name="theme-color" content="#073b70">
+  
+  <script>
+    (() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem("myzen_settings") || "{}");
+        const theme = saved.theme || localStorage.getItem("myzen_theme") || "light";
+        const valid = theme === "dark" ? "dark" : "light";
+        document.documentElement.dataset.theme = valid;
+        document.documentElement.style.colorScheme = valid;
+      } catch (error) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+<meta name="theme-color" content="#073b70">
   <meta name="description" content="Create your MYZEN MONEY wallet account securely.">
 
   <title>MYZEN MONEY - Create Account</title>
@@ -209,6 +223,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="css/theme.css?v=20261127">
 </head>
 
 <body>

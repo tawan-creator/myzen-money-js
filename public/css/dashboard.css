@@ -1,731 +1,171 @@
 
 /* =====================================
-   MYZEN MONEY - PREMIUM DASHBOARD
+   MYZEN MONEY - DASHBOARD DARK MODE
 ===================================== */
 
-.dashboard-page {
-  margin: 0;
-  background: #f3f6fc;
-  color: #172b4d;
-  font-family: Arial, Helvetica, sans-serif;
-  padding-bottom: 100px;
+html[data-theme="dark"] {
+  color-scheme: dark;
 }
 
-/* HEADER */
-
-.dashboard-header {
-  background: #102b50;
-  color: #fff;
-  padding: 15px 22px;
-  box-shadow: 0 4px 18px rgba(16, 43, 80, 0.12);
-}
-
-.header-inner {
-  max-width: 1150px;
-  margin: auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: white;
-  text-decoration: none;
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-
-.brand strong {
-  color: #65b5ff;
-}
-
-.brand-icon {
-  width: 39px;
-  height: 39px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #38a2ff, #1762d5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  font-size: 23px;
-  font-weight: 900;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-user {
-  font-size: 13px;
-  color: #d9e9ff;
-  font-weight: 600;
-}
-
-.profile-button,
-.logout-button {
-  border: none;
-  text-decoration: none;
-  border-radius: 10px;
-  padding: 11px 15px;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.profile-button {
-  color: #1454a4;
-  background: white;
-}
-
-.logout-button {
-  color: white;
-  background: #f04c4c;
-}
-
-.profile-button:hover,
-.logout-button:hover {
-  opacity: 0.85;
-}
-
-
-/* MAIN CONTAINER */
-
-.dashboard-container {
-  width: 100%;
-  max-width: 1150px;
-  margin: auto;
-  padding: 28px 22px;
-  box-sizing: border-box;
-}
-
-
-/* WELCOME */
-
-.welcome-section {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-}
-
-.welcome-subtitle {
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: #387ad0;
-  font-weight: 800;
-  margin: 0 0 9px;
-}
-
-.welcome-section h1 {
-  font-size: 27px;
-  margin: 0;
-  color: #142c4e;
-}
-
-.welcome-description {
-  color: #8492a8;
-  font-size: 14px;
-  margin: 9px 0 0;
-}
-
-.welcome-decoration {
-  color: #c9dfff;
-  font-size: 65px;
-  padding-right: 20px;
-}
-
-
-/* BALANCE CARD */
-
-.balance-card {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  min-height: 175px;
-  border-radius: 22px;
-  padding: 27px 30px;
-  box-sizing: border-box;
-  color: white;
-  background: linear-gradient(120deg, #102e59, #1763b9 65%, #3189df);
-  box-shadow: 0 13px 30px rgba(27, 87, 160, 0.19);
-  margin-bottom: 25px;
-}
-
-.balance-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.balance-caption {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  color: #d8eaff;
-}
-
-.balance-subtitle {
-  font-size: 12px;
-  margin-top: 6px;
-  color: #a9d2ff;
-}
-
-.wallet-symbol {
-  width: 43px;
-  height: 43px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.16);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 23px;
-}
-
-.balance-amount {
-  position: relative;
-  z-index: 2;
-  font-size: clamp(28px, 5vw, 38px);
-  font-weight: 900;
-  margin: 17px 0 15px;
-  letter-spacing: 0.4px;
-  overflow-wrap: anywhere;
-}
-
-.balance-card-bottom {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #e1f0ff;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #48e29b;
-  box-shadow: 0 0 10px rgba(72, 226, 155, 0.8);
-}
-
-.balance-decoration {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.06);
-  z-index: -1;
-}
-
-.decoration-one {
-  width: 200px;
-  height: 200px;
-  right: -40px;
-  top: -90px;
-}
-
-.decoration-two {
-  width: 160px;
-  height: 160px;
-  right: 80px;
-  bottom: -120px;
-}
-
-
-/* QUICK ACTIONS */
-
-.quick-actions {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 13px;
-  margin-bottom: 35px;
-}
-
-.quick-action {
-  background: white;
-  border: 1px solid #e6edf7;
-  padding: 17px 8px;
-  border-radius: 15px;
-  text-decoration: none;
-  color: #253e63;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  font-size: 12px;
-  font-weight: 700;
-  transition: 0.2s ease;
-}
-
-.quick-action:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(34, 76, 130, 0.1);
-}
-
-.quick-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-}
-
-.send-icon {
-  color: #236be0;
-  background: #e9f1ff;
-}
-
-.deposit-icon {
-  color: #159a70;
-  background: #e5f8f0;
-}
-
-.withdraw-icon {
-  color: #e38a24;
-  background: #fff3e3;
-}
-
-.receive-icon {
-  color: #8558df;
-  background: #f0eaff;
-}
-
-
-/* SECTION HEADINGS */
-
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 17px;
+html[data-theme="dark"] .dashboard-page {
+  background: #0b1220;
+  color: #e5edf8;
 }
 
-.section-heading h2 {
-  color: #172e50;
-  font-size: 20px;
-  margin: 0;
+html[data-theme="dark"] .welcome-section h1,
+html[data-theme="dark"] .section-heading h2 {
+  color: #e5edf8;
 }
 
-.section-heading p {
-  color: #91a0b5;
-  font-size: 12px;
-  margin: 6px 0 0;
+html[data-theme="dark"] .welcome-description,
+html[data-theme="dark"] .section-heading p {
+  color: #9aaac0;
 }
 
-.services-section {
-  margin-bottom: 35px;
+html[data-theme="dark"] .welcome-subtitle {
+  color: #75b8ff;
 }
 
-
-/* SERVICE GRID */
-
-.menu-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.menu-item {
-  position: relative;
-  min-height: 105px;
-  padding: 17px;
-  box-sizing: border-box;
-  border-radius: 16px;
-  border: 1px solid #e7edf6;
-  background: white;
-  text-decoration: none;
-  color: #243c60;
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  transition: 0.2s ease;
+html[data-theme="dark"] .welcome-decoration {
+  color: #263d5c;
 }
 
-.menu-item:hover {
-  transform: translateY(-3px);
-  border-color: #b6d3ff;
-  box-shadow: 0 9px 22px rgba(28, 78, 145, 0.08);
-}
+/* Quick action cards */
 
-.service-icon {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 23px;
-  font-weight: bold;
+html[data-theme="dark"] .quick-action {
+  background: #172338;
+  border-color: #293a54;
+  color: #e5edf8;
 }
 
-.service-name {
-  font-size: 13px;
-  font-weight: 700;
+html[data-theme="dark"] .quick-action:hover {
+  border-color: #4779b8;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-.service-arrow {
-  margin-left: auto;
-  font-size: 21px;
-  color: #a8b5c8;
-}
+/* Service cards */
 
-.blue {
-  color: #2769dc;
-  background: #eaf1ff;
+html[data-theme="dark"] .menu-item {
+  background: #172338;
+  border-color: #293a54;
+  color: #e5edf8;
 }
 
-.green {
-  color: #13986b;
-  background: #e4f8ef;
+html[data-theme="dark"] .menu-item:hover {
+  border-color: #4779b8;
+  box-shadow: 0 9px 22px rgba(0, 0, 0, 0.25);
 }
 
-.purple {
-  color: #8854dc;
-  background: #f1eaff;
+html[data-theme="dark"] .service-arrow {
+  color: #7186a3;
 }
 
-.orange {
-  color: #df8a27;
-  background: #fff2e2;
-}
+/* Transaction section */
 
-.cyan {
-  color: #0b91ad;
-  background: #e3f8fb;
+html[data-theme="dark"] .transactions-section {
+  background: #172338;
+  border-color: #293a54;
 }
 
-.pink {
-  color: #dc5b91;
-  background: #ffedf4;
+html[data-theme="dark"] .empty-transactions {
+  color: #9aaac0;
 }
 
-.yellow {
-  color: #b98716;
-  background: #fff7dc;
+html[data-theme="dark"] .empty-transactions h3 {
+  color: #e5edf8;
 }
 
-.gray {
-  color: #687b94;
-  background: #edf1f6;
+html[data-theme="dark"] .empty-icon {
+  background: #22334d;
+  color: #75b8ff;
 }
 
-.dark-blue {
-  color: #2565c4;
-  background: #e9f1ff;
+html[data-theme="dark"] .view-all {
+  color: #75b8ff;
 }
 
+/* Footer */
 
-/* TRANSACTIONS */
-
-.transactions-section {
-  background: white;
-  border: 1px solid #e7edf6;
-  border-radius: 18px;
-  padding: 22px;
-  margin-top: 20px;
-}
-
-.view-all {
-  color: #2168d5;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
+html[data-theme="dark"] .dashboard-footer {
+  color: #8293aa;
 }
 
-.transaction-list {
-  margin-top: 15px;
+html[data-theme="dark"] .dashboard-footer strong {
+  color: #c1d7f5;
 }
 
-.empty-transactions {
-  text-align: center;
-  padding: 25px 10px;
-  color: #8796ab;
-}
+/* Bottom navigation */
 
-.empty-icon {
-  margin: auto auto 12px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f5fc;
-  color: #347bd4;
-  font-size: 25px;
+html[data-theme="dark"] .bottom-nav {
+  background: rgba(17, 29, 47, 0.97);
+  border-top-color: #293a54;
+  box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.25);
 }
 
-.empty-transactions h3 {
-  color: #314968;
-  font-size: 14px;
-  margin: 0 0 7px;
+html[data-theme="dark"] .nav-item {
+  color: #899bb4;
 }
 
-.empty-transactions p {
-  font-size: 12px;
-  margin: 0;
+html[data-theme="dark"] .nav-item.active {
+  color: #75b8ff;
 }
-
 
-/* DASHBOARD MESSAGE */
+/* Profile button */
 
-.dashboard-message {
-  margin-top: 15px;
-  font-size: 13px;
-  color: #71839c;
+html[data-theme="dark"] .profile-button {
+  background: #e5edf8;
+  color: #17365f;
 }
 
+/* Dashboard message */
 
-/* FOOTER */
-
-.dashboard-footer {
-  text-align: center;
-  margin-top: 40px;
-  padding: 20px;
-  color: #93a1b4;
-  font-size: 12px;
+html[data-theme="dark"] .dashboard-message {
+  color: #9aaac0;
 }
 
-.dashboard-footer strong {
-  color: #31547e;
-  letter-spacing: 1px;
-}
+/* Keep colored service icons readable */
 
-.dashboard-footer p {
-  margin: 7px 0;
+html[data-theme="dark"] .blue {
+  background: #1d3559;
+  color: #8abaff;
 }
 
-.dashboard-footer small {
-  font-size: 10px;
+html[data-theme="dark"] .green {
+  background: #173d35;
+  color: #69d9ae;
 }
 
-
-/* BOTTOM NAVIGATION */
-
-.bottom-nav {
-  position: fixed;
-  z-index: 1000;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  min-height: 70px;
-  padding: 8px 10px;
-  padding-bottom: max(8px, env(safe-area-inset-bottom));
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  background: rgba(255,255,255,0.97);
-  border-top: 1px solid #e6edf6;
-  box-shadow: 0 -5px 20px rgba(24, 55, 95, 0.06);
-  backdrop-filter: blur(12px);
+html[data-theme="dark"] .purple {
+  background: #352750;
+  color: #c0a0ff;
 }
 
-.nav-item {
-  min-width: 50px;
-  text-decoration: none;
-  color: #91a0b5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 22px;
+html[data-theme="dark"] .orange {
+  background: #49351f;
+  color: #ffc078;
 }
 
-.nav-item small {
-  font-size: 10px;
-  font-weight: 700;
+html[data-theme="dark"] .cyan {
+  background: #173c49;
+  color: #76d9ed;
 }
 
-.nav-item.active {
-  color: #2168d5;
+html[data-theme="dark"] .pink {
+  background: #49283a;
+  color: #f49ac1;
 }
-
-
-/* TABLET */
 
-@media (min-width: 768px) {
-  .dashboard-page {
-    padding-bottom: 25px;
-  }
-
-  .bottom-nav {
-    display: none;
-  }
-
-  .quick-actions {
-    max-width: 650px;
-  }
+html[data-theme="dark"] .yellow {
+  background: #453b20;
+  color: #f4d16e;
 }
 
-
-/* MOBILE */
-
-@media (max-width: 600px) {
-
-  .dashboard-header {
-    padding: 13px 14px;
-  }
-
-  .header-inner {
-    align-items: center;
-    gap: 8px;
-  }
-
-  .brand {
-    font-size: 16px;
-    gap: 7px;
-  }
-
-  .brand-icon {
-    width: 33px;
-    height: 33px;
-    font-size: 19px;
-    border-radius: 10px;
-  }
-
-  .header-actions {
-    gap: 6px;
-  }
-
-  .header-user {
-    display: none;
-  }
-
-  .profile-button,
-  .logout-button {
-    padding: 9px 10px;
-    font-size: 11px;
-    border-radius: 8px;
-  }
-
-  .dashboard-container {
-    padding: 22px 14px;
-  }
-
-  .welcome-section h1 {
-    font-size: 23px;
-  }
-
-  .welcome-description {
-    font-size: 12px;
-  }
-
-  .welcome-decoration {
-    font-size: 45px;
-    padding-right: 5px;
-  }
-
-  .balance-card {
-    min-height: 155px;
-    padding: 23px 20px;
-    border-radius: 19px;
-  }
-
-  .balance-amount {
-    font-size: 30px;
-    margin: 15px 0;
-  }
-
-  .quick-actions {
-    gap: 9px;
-  }
-
-  .quick-action {
-    padding: 13px 5px;
-    font-size: 11px;
-    border-radius: 13px;
-  }
-
-  .quick-icon {
-    width: 34px;
-    height: 34px;
-    font-size: 20px;
-  }
-
-  .section-heading h2 {
-    font-size: 18px;
-  }
-
-  .menu-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .menu-item {
-    min-height: 88px;
-    padding: 12px;
-    gap: 9px;
-    border-radius: 14px;
-  }
-
-  .service-icon {
-    width: 37px;
-    height: 37px;
-    font-size: 19px;
-    border-radius: 11px;
-  }
-
-  .service-name {
-    font-size: 11px;
-  }
-
-  .service-arrow {
-    font-size: 17px;
-  }
-
-  .transactions-section {
-    padding: 17px 14px;
-    border-radius: 15px;
-  }
-
-  .dashboard-footer {
-    margin-top: 25px;
-  }
+html[data-theme="dark"] .gray {
+  background: #29384c;
+  color: #b3c1d4;
 }
-
-
-/* SMALL MOBILE */
-
-@media (max-width: 360px) {
-
-  .brand {
-    font-size: 14px;
-  }
-
-  .profile-button,
-  .logout-button {
-    padding: 8px;
-    font-size: 10px;
-  }
-
-  .menu-item {
-    padding: 10px;
-    gap: 7px;
-  }
-
-  .service-icon {
-    width: 32px;
-    height: 32px;
-  }
-
-  .service-name {
-    font-size: 10px;
-  }
 
+html[data-theme="dark"] .dark-blue {
+  background: #1d3559;
+  color: #8abaff;
 }

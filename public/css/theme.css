@@ -1,0 +1,234 @@
+/* MYZEN MONEY — PREMIUM GOLD & BLACK GLOBAL THEME */
+:root {
+  --mz-gold: #c7a24b;
+  --mz-gold-bright: #e2c16f;
+  --mz-gold-soft: #f4ead0;
+  --mz-black: #111111;
+  --mz-bg: #f7f5ef;
+  --mz-card: #ffffff;
+  --mz-text: #191919;
+  --mz-muted: #716d63;
+  --mz-border: #e7dfcd;
+  --mz-input: #ffffff;
+  --mz-shadow: 0 10px 28px rgba(37, 29, 12, .07);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --mz-bg: #090909;
+  --mz-card: #151515;
+  --mz-text: #f5f1e7;
+  --mz-muted: #b4ad9d;
+  --mz-border: #393226;
+  --mz-input: #1d1b17;
+  --mz-gold-soft: #302716;
+  --mz-shadow: 0 12px 30px rgba(0,0,0,.32);
+}
+html[data-theme="light"] { color-scheme: light; }
+html, body { background: var(--mz-bg) !important; color: var(--mz-text); }
+body { transition: background-color .22s ease, color .22s ease; }
+body, body * { scrollbar-color: var(--mz-gold) var(--mz-bg); }
+
+/* Shared surfaces */
+.card, .auth-card, .dashboard-header, .transactions-section,
+.quick-action, .menu-item, .setting-row, .payment-box, .transfer-card,
+.receive-box, .route-box, .account-info, .summary, .stat, .rate-card,
+.info-box, .notice, .qr-container, .qr-section, .send-option,
+.profile-row, .balance, .container > .card {
+  background-color: var(--mz-card) !important;
+  color: var(--mz-text) !important;
+  border-color: var(--mz-border) !important;
+  box-shadow: var(--mz-shadow);
+}
+.dashboard-page, .dashboard-container, .container, .auth-container,
+.transfer-container, main, .app-layout { color: var(--mz-text); }
+
+/* Brand and headings */
+.brand, .dashboard-logo, .logo-area, .logo, .welcome-subtitle,
+.eyebrow, .section-icon, .heading-icon, .nav-icon,
+.section-heading h2, .section-title, .page-heading,
+.welcome-title, .welcome h1, .welcome h2 {
+  color: var(--mz-gold) !important;
+}
+h1, h2, h3, h4, .section-heading h2, .setting-label,
+.profile-label, .profile-value, .balance-label, .balance-amount,
+.stat-value, .heading-left, .card-heading { color: var(--mz-text); }
+p, .muted, .setting-description, .welcome-description,
+.section-heading p, .footer, .footer-note, .description,
+.balance-label, .rate-description, .rate-note { color: var(--mz-muted); }
+
+/* Gold action cards: Quick Actions and Money Services */
+.quick-action, .menu-item, .send-option {
+  background: var(--mz-card) !important;
+  color: var(--mz-text) !important;
+  border: 1px solid var(--mz-border) !important;
+  border-radius: 16px;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.quick-action:hover, .menu-item:hover, .send-option:hover {
+  border-color: var(--mz-gold) !important;
+  box-shadow: 0 10px 26px rgba(199,162,75,.18) !important;
+  transform: translateY(-2px);
+}
+.quick-icon, .service-icon, .icon-wrap, .stat-icon, .option-icon,
+.banner-icon, .hero-icon {
+  background: var(--mz-gold-soft) !important;
+  color: var(--mz-gold) !important;
+  border-color: var(--mz-border) !important;
+}
+.blue, .green, .purple, .orange, .cyan, .pink, .yellow, .gray, .dark-blue {
+  background: var(--mz-gold-soft) !important;
+  color: var(--mz-gold) !important;
+}
+.service-arrow, .option-arrow { color: var(--mz-gold) !important; }
+
+/* Main balance / premium banners */
+.balance-card, .transfer-banner, .hero {
+  background: linear-gradient(135deg, #111111 0%, #262116 58%, #3a2d16 100%) !important;
+  color: #fffaf0 !important;
+  border: 1px solid rgba(199,162,75,.55) !important;
+  box-shadow: 0 14px 32px rgba(0,0,0,.16);
+}
+.balance-card h1, .balance-card h2, .balance-card p,
+.balance-card .balance-amount, .transfer-banner *, .hero * { color: #fffaf0; }
+.balance-card .account-status, .banner-label, .balance-label {
+  color: var(--mz-gold-bright) !important;
+}
+
+/* Buttons */
+button, .btn, .btn-primary, .primary, .primary-btn, .submit-btn,
+.btn-block, .save-btn, .rate-save, .qr-upload-button {
+  background: linear-gradient(135deg, #d9b65f, #b78d35) !important;
+  color: #17130a !important;
+  border: 1px solid #b78d35 !important;
+  font-weight: 750;
+  box-shadow: 0 5px 14px rgba(183,141,53,.16);
+}
+button:hover, .btn:hover, .btn-primary:hover, .primary:hover,
+.primary-btn:hover, .submit-btn:hover, .btn-block:hover {
+  background: linear-gradient(135deg, #e7c979, #c49b45) !important;
+  filter: brightness(1.02);
+}
+.secondary, .secondary-btn, .btn-secondary, .back, .back-button {
+  background: transparent !important;
+  color: var(--mz-gold) !important;
+  border: 1px solid var(--mz-gold) !important;
+}
+.logout-btn, .danger { border-color: #a83b32 !important; }
+
+/* Forms */
+input, select, textarea, .form-group input, .form-group select,
+.form-group textarea, .setting-value, .user-search-wrap input {
+  background: var(--mz-input) !important;
+  color: var(--mz-text) !important;
+  border-color: var(--mz-border) !important;
+}
+input::placeholder, textarea::placeholder { color: var(--mz-muted) !important; }
+input:focus, select:focus, textarea:focus {
+  border-color: var(--mz-gold) !important;
+  box-shadow: 0 0 0 3px rgba(199,162,75,.16) !important;
+  outline: none;
+}
+label, .form-group label, .setting-label { color: var(--mz-text); }
+
+/* Navigation, header and footer */
+.topbar, .header, .bottom-nav, .sidebar, .topbar, .dashboard-header {
+  background: var(--mz-card) !important;
+  color: var(--mz-text) !important;
+  border-color: var(--mz-border) !important;
+}
+.nav-item, .nav-link, .profile-button, .view-all, a.back,
+.register-link, .login-link { color: var(--mz-gold) !important; }
+.nav-item.active, .nav-link.active { color: var(--mz-gold-bright) !important; }
+.dashboard-footer, .footer, .footer-note { color: var(--mz-muted) !important; }
+
+/* Admin panels and status blocks */
+.stat, .rate-card, .user-stats, .actions, .transfer-warning,
+.empty, .empty-transactions, .loading, .message, .status,
+.verification-area, .qr-preview, .qr-upload-area {
+  border-color: var(--mz-border) !important;
+}
+.message.success { color: #27865b !important; }
+.message.error, .danger { color: #c34d43 !important; }
+.switch-slider { background: #777 !important; }
+.switch input:checked + .switch-slider { background: var(--mz-gold) !important; }
+
+/* Dark mode surfaces, text and borders */
+html[data-theme="dark"] .dashboard-page,
+html[data-theme="dark"] .dashboard-container,
+html[data-theme="dark"] .container,
+html[data-theme="dark"] .auth-container,
+html[data-theme="dark"] .transfer-container,
+html[data-theme="dark"] main,
+html[data-theme="dark"] .app-layout { background: var(--mz-bg) !important; color: var(--mz-text) !important; }
+html[data-theme="dark"] .dashboard-header,
+html[data-theme="dark"] .quick-action,
+html[data-theme="dark"] .menu-item,
+html[data-theme="dark"] .transactions-section,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .auth-card,
+html[data-theme="dark"] .setting-row,
+html[data-theme="dark"] .payment-box,
+html[data-theme="dark"] .transfer-card,
+html[data-theme="dark"] .receive-box,
+html[data-theme="dark"] .route-box,
+html[data-theme="dark"] .account-info,
+html[data-theme="dark"] .summary,
+html[data-theme="dark"] .stat,
+html[data-theme="dark"] .rate-card,
+html[data-theme="dark"] .info-box,
+html[data-theme="dark"] .notice,
+html[data-theme="dark"] .qr-container,
+html[data-theme="dark"] .qr-section,
+html[data-theme="dark"] .send-option,
+html[data-theme="dark"] .profile-row,
+html[data-theme="dark"] .bottom-nav,
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .header,
+html[data-theme="dark"] .sidebar {
+  background-color: var(--mz-card) !important;
+  color: var(--mz-text) !important;
+  border-color: var(--mz-border) !important;
+}
+html[data-theme="dark"] h1, html[data-theme="dark"] h2,
+html[data-theme="dark"] h3, html[data-theme="dark"] h4,
+html[data-theme="dark"] p, html[data-theme="dark"] label,
+html[data-theme="dark"] .welcome-description,
+html[data-theme="dark"] .section-heading p,
+html[data-theme="dark"] .empty-transactions,
+html[data-theme="dark"] .muted,
+html[data-theme="dark"] .setting-description,
+html[data-theme="dark"] .profile-value { color: var(--mz-text); }
+html[data-theme="dark"] input, html[data-theme="dark"] select,
+html[data-theme="dark"] textarea { background: var(--mz-input) !important; color: var(--mz-text) !important; }
+html[data-theme="dark"] .quick-icon,
+html[data-theme="dark"] .service-icon,
+html[data-theme="dark"] .icon-wrap,
+html[data-theme="dark"] .stat-icon,
+html[data-theme="dark"] .option-icon,
+html[data-theme="dark"] .banner-icon,
+html[data-theme="dark"] .hero-icon,
+html[data-theme="dark"] .blue,
+html[data-theme="dark"] .green,
+html[data-theme="dark"] .purple,
+html[data-theme="dark"] .orange,
+html[data-theme="dark"] .cyan,
+html[data-theme="dark"] .pink,
+html[data-theme="dark"] .yellow,
+html[data-theme="dark"] .gray,
+html[data-theme="dark"] .dark-blue {
+  background: var(--mz-gold-soft) !important;
+  color: var(--mz-gold-bright) !important;
+}
+html[data-theme="dark"] .profile-button {
+  background: var(--mz-gold-soft) !important;
+  color: var(--mz-gold-bright) !important;
+}
+html[data-theme="dark"] .bottom-nav { background: rgba(17,17,17,.97) !important; }
+
+/* Responsive spacing and accessibility */
+@media (max-width: 650px) {
+  .quick-action, .menu-item { border-radius: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

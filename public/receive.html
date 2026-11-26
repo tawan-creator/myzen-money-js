@@ -1,50 +1,97 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <script>
+    (() => {
+      try {
+        const saved = JSON.parse(
+          localStorage.getItem("myzen_settings") || "{}"
+        );
+        const theme =
+          saved.theme ||
+          localStorage.getItem("myzen_theme") ||
+          "light";
+
+        const valid = theme === "dark" ? "dark" : "light";
+        document.documentElement.dataset.theme = valid;
+        document.documentElement.style.colorScheme = valid;
+      } catch (error) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+
   <title>MYZEN MONEY - Receive Money</title>
 
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/theme.css?v=20261127">
 
   <style>
+    :root {
+      --gold: #c7a24b;
+      --gold-light: #e4c878;
+      --gold-dark: #98752e;
+      --receive-bg: #f5f3ed;
+      --receive-card: #ffffff;
+      --receive-inner: #f8f6f0;
+      --receive-text: #191919;
+      --receive-muted: #77736a;
+      --receive-border: #e6dcc4;
+      --receive-shadow: 0 12px 35px rgba(0,0,0,.07);
+    }
+
+    html[data-theme="dark"] {
+      --receive-bg: #090909;
+      --receive-card: #151515;
+      --receive-inner: #1c1a16;
+      --receive-text: #f4eee0;
+      --receive-muted: #b7ad98;
+      --receive-border: #4b3d22;
+      --receive-shadow: 0 12px 35px rgba(0,0,0,.3);
+    }
+
     * {
       box-sizing: border-box;
     }
 
     body {
       margin: 0;
-      padding: 20px;
       min-height: 100vh;
-      background: #f3f6fc;
+      padding: 25px 15px 40px;
+      background: var(--receive-bg) !important;
+      color: var(--receive-text) !important;
       font-family: Arial, Helvetica, sans-serif;
-      color: #17315e;
+      transition: background .25s, color .25s;
     }
 
     .receive-wrapper {
       width: 100%;
-      max-width: 480px;
+      max-width: 490px;
       margin: 15px auto;
-      padding: 25px 20px;
-      background: #ffffff;
-      border-radius: 20px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+      padding: 30px 23px;
+      background: var(--receive-card) !important;
+      color: var(--receive-text) !important;
+      border: 1px solid var(--receive-border);
+      border-radius: 23px;
+      box-shadow: var(--receive-shadow);
       text-align: center;
     }
 
     .receive-wrapper h2 {
-      margin: 5px 0 15px;
-      font-size: 25px;
-      color: #17315e;
+      margin: 5px 0 12px;
+      font-size: 27px;
+      font-weight: 800;
+      color: var(--gold) !important;
     }
 
     .subtitle {
-      color: #71829c;
+      color: var(--receive-muted) !important;
       font-size: 14px;
-      line-height: 1.6;
+      line-height: 1.7;
       margin: 0 0 22px;
     }
 
@@ -54,17 +101,18 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 25px;
+      margin-bottom: 28px;
     }
 
     .country-info span {
       display: inline-block;
-      padding: 12px 15px;
-      background: #eef3fb;
-      border-radius: 11px;
-      font-size: 14px;
-      font-weight: bold;
-      color: #17315e;
+      padding: 12px 17px;
+      background: var(--receive-inner) !important;
+      border: 1px solid var(--receive-border);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold) !important;
     }
 
     .qr-section {
@@ -73,28 +121,26 @@
       text-align: center;
     }
 
-    .qr-section h3 {
-      font-size: 18px;
+    .qr-section h3,
+    .receive-code-box h3 {
+      font-size: 19px;
+      font-weight: 800;
       margin: 0 0 12px;
-      color: #17315e;
-    }
-
-    .qr-section .subtitle {
-      margin-bottom: 22px;
+      color: var(--gold) !important;
     }
 
     .qr-container {
       width: 260px;
       height: 260px;
-      margin: 0 auto 22px;
-      padding: 19px;
-      background: #ffffff;
-      border: 1px solid #dce5f1;
-      border-radius: 19px;
+      margin: 0 auto 23px;
+      padding: 18px;
+      background: #ffffff !important;
+      border: 2px solid var(--gold);
+      border-radius: 22px;
       display: flex;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 8px 25px rgba(199,162,75,.13);
     }
 
     #receiveQr {
@@ -103,6 +149,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      background: #ffffff;
     }
 
     #receiveQr canvas,
@@ -117,98 +164,111 @@
     .receive-code-box {
       width: 100%;
       margin-top: 28px;
-      padding: 22px 15px;
-      background: #f3f6fc;
-      border-radius: 16px;
+      padding: 25px 17px;
+      background: var(--receive-inner) !important;
+      border: 1px solid var(--receive-border);
+      border-radius: 19px;
     }
 
     .receive-code-box h3 {
-      margin: 0 0 22px;
-      font-size: 18px;
-      color: #17315e;
+      margin-bottom: 22px;
     }
 
     #receiveCode {
-      min-height: 42px;
-      margin: 10px 0 20px;
-      font-size: 30px;
-      font-weight: bold;
+      min-height: 45px;
+      margin: 12px 0 22px;
+      font-size: 32px;
+      font-weight: 900;
       letter-spacing: 7px;
-      color: #17315e;
+      color: var(--gold) !important;
       overflow-wrap: anywhere;
     }
 
     button {
       border: none;
-      border-radius: 10px;
-      padding: 13px 22px;
+      border-radius: 12px;
+      padding: 14px 22px;
       font-size: 14px;
-      font-weight: bold;
+      font-weight: 800;
       cursor: pointer;
-      transition: 0.2s;
+      transition: .2s;
     }
 
     button:disabled {
-      opacity: 0.5;
+      opacity: .5;
       cursor: not-allowed;
     }
 
+    .download-btn,
+    .copy-btn {
+      background: linear-gradient(
+        135deg,
+        var(--gold-light),
+        var(--gold-dark)
+      ) !important;
+      color: #17130b !important;
+      box-shadow: 0 5px 15px rgba(199,162,75,.18);
+    }
+
     .download-btn {
-      width: 185px;
-      background: #2563eb;
-      color: #ffffff;
+      width: 190px;
     }
 
     .copy-btn {
-      width: 145px;
-      background: #15803d;
-      color: #ffffff;
+      width: 150px;
+    }
+
+    button:not(:disabled):hover {
+      transform: translateY(-2px);
+      filter: brightness(1.06);
     }
 
     button:not(:disabled):active {
-      transform: scale(0.97);
+      transform: scale(.97);
     }
 
     #receiveCodeMessage {
       min-height: 20px;
-      margin: 15px 0 5px;
+      margin: 16px 0 3px;
       font-size: 13px;
-      line-height: 1.5;
-      color: #71829c;
+      line-height: 1.6;
+      color: var(--receive-muted) !important;
       overflow-wrap: anywhere;
     }
 
     #message {
-      margin-top: 12px;
-      color: #991b1b;
+      margin-top: 15px;
+      color: #dc4545;
       font-size: 13px;
-      line-height: 1.5;
+      line-height: 1.6;
       overflow-wrap: anywhere;
     }
 
     .notice {
-      margin-top: 22px;
-      padding: 14px;
-      background: #fff7e6;
-      color: #8a5a00;
-      border-radius: 12px;
+      margin-top: 24px;
+      padding: 16px;
+      background: var(--receive-inner) !important;
+      color: var(--receive-muted) !important;
+      border: 1px solid var(--receive-border);
+      border-left: 4px solid var(--gold);
+      border-radius: 13px;
       font-size: 12px;
-      line-height: 1.7;
+      line-height: 1.8;
       text-align: left;
     }
 
     @media (max-width: 400px) {
       body {
-        padding: 10px;
+        padding: 12px 9px 25px;
       }
 
       .receive-wrapper {
-        padding: 22px 13px;
+        padding: 23px 13px;
       }
 
       .qr-container {
-        width: 250px;
-        height: 250px;
+        width: 245px;
+        height: 245px;
       }
 
       #receiveQr {
@@ -226,7 +286,6 @@
 </head>
 
 <body>
-
   <main class="receive-wrapper">
 
     <h2>Receive Money</h2>
@@ -235,25 +294,12 @@
       Receive money using your MYZEN MONEY QR Code
     </p>
 
-    <!-- COUNTRY AND CURRENCY -->
-
     <div class="country-info">
-
-      <span id="country">
-        Loading country...
-      </span>
-
-      <span id="currency">
-        Loading currency...
-      </span>
-
+      <span id="country">Loading country...</span>
+      <span id="currency">Loading currency...</span>
     </div>
 
-
-    <!-- QR CODE -->
-
     <section class="qr-section">
-
       <h3>My Receive QR Code</h3>
 
       <p class="subtitle">
@@ -261,9 +307,7 @@
       </p>
 
       <div class="qr-container">
-
         <div id="receiveQr"></div>
-
       </div>
 
       <button
@@ -274,19 +318,12 @@
       >
         Download QR Code
       </button>
-
     </section>
 
-
-    <!-- RECEIVE CODE -->
-
     <section class="receive-code-box">
-
       <h3>My Receive Code</h3>
 
-      <div id="receiveCode">
-        ------
-      </div>
+      <div id="receiveCode">------</div>
 
       <button
         type="button"
@@ -300,16 +337,9 @@
       <p id="receiveCodeMessage">
         Loading your wallet...
       </p>
-
     </section>
 
-
-    <!-- ERROR MESSAGE -->
-
     <div id="message"></div>
-
-
-    <!-- NOTICE -->
 
     <div class="notice">
       Share your QR Code or 6-digit Receive Code with the sender.
@@ -318,10 +348,6 @@
 
   </main>
 
-
-  <!-- RECEIVE JAVASCRIPT -->
-
   <script type="module" src="js/receive.js"></script>
-
 </body>
 </html>

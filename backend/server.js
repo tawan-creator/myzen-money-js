@@ -4,7 +4,7 @@
 // ==========================================
 // MYZEN MONEY - PRODUCTION WALLET BACKEND
 // Wallet Transfers + Deposits + Admin Users
-// Transaction History API
+// Transaction History + Online Presence
 // Firebase Admin SDK v14
 // ==========================================
 
@@ -38,6 +38,8 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 const ADMIN_EMAIL = "tharwaiphyol@gmail.com";
+
+const ONLINE_THRESHOLD_MS = 90 * 1000;
 
 app.disable("x-powered-by");
 
@@ -277,6 +279,34 @@ function minorUnitsToMoney(value, currency) {
 }
 
 // ==========================================
+// DATE HELPER
+// ==========================================
+
+function historyDateToISO(value) {
+  if (!value) return null;
+
+  if (typeof value.toDate === "function") {
+    return value.toDate().toISOString();
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (typeof value.seconds === "number") {
+    return new Date(
+      value.seconds * 1000
+    ).toISOString();
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return null;
+}
+
+// ==========================================
 // AUTHENTICATION
 // ==========================================
 
@@ -374,9 +404,50 @@ app.get("/api/health", (req, res) => {
     success: true,
     message: "MYZEN MONEY PRODUCTION WALLET API IS RUNNING",
     transferMode: "WALLET_TO_WALLET",
+    presence: "ENABLED",
     timestamp: new Date().toISOString()
   });
 });
+
+// ==========================================
+// USER PRESENCE / ONLINE HEARTBEAT
+// POST /api/presence/heartbeat
+// ==========================================
+
+app.post(
+  "/api/presence/heartbeat",
+  requireAuth,
+  async (req, res) => {
+    try {
+      const userRef = db
+        .collection("users")
+        .doc(req.user.uid);
+
+      await userRef.set({
+        lastSeenAt: FieldValue.serverTimestamp()
+      }, {
+        merge: true
+      });
+
+      return res.json({
+        success: true,
+        message: "Presence updated."
+      });
+
+    } catch (error) {
+      console.error(
+        "PRESENCE HEARTBEAT ERROR:",
+        error
+      );
+
+      return sendError(
+        res,
+        500,
+        "Unable to update online status."
+      );
+    }
+  }
+);
 
 // ==========================================
 // MY WALLET PROFILE
@@ -1093,34 +1164,6 @@ app.use(
 );
 
 // ==========================================
-// DATE HELPER FOR HISTORY
-// ==========================================
-
-function historyDateToISO(value) {
-  if (!value) return null;
-
-  if (typeof value.toDate === "function") {
-    return value.toDate().toISOString();
-  }
-
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-
-  if (typeof value.seconds === "number") {
-    return new Date(
-      value.seconds * 1000
-    ).toISOString();
-  }
-
-  if (typeof value === "string") {
-    return value;
-  }
-
-  return null;
-}
-
-// ==========================================
 // USER TRANSACTION HISTORY
 // GET /api/history/my
 // ==========================================
@@ -1158,11 +1201,7 @@ app.get(
       const depositLedgerReferences = new Set();
       const internationalLedgerReferences = new Set();
 
-      // --------------------------------------
       // WALLET LEDGER
-      // Deposit / Send / Receive / Refund
-      // --------------------------------------
-
       ledgerSnap.forEach((doc) => {
         const data = doc.data();
 
@@ -1173,7 +1212,6 @@ app.get(
 
         let type = data.type || "";
 
-        // Wallet transfer ledger entries
         if (!type && data.transferId) {
           type = "wallet_transfer";
         }
@@ -1216,36 +1254,19 @@ app.get(
         transactions.push({
           id: doc.id,
           referenceId,
-
           type,
-
           direction: data.direction || "",
-
           amount: Number(data.amount || 0),
           currency: data.currency || "",
-
-          balanceBefore:
-            data.balanceBefore ?? null,
-
-          balanceAfter:
-            data.balanceAfter ?? null,
-
+          balanceBefore: data.balanceBefore ?? null,
+          balanceAfter: data.balanceAfter ?? null,
           status: data.status || "completed",
-
-          counterpartyUid:
-            data.counterpartyUid || "",
-
-          createdAt: historyDateToISO(
-            data.createdAt
-          )
+          counterpartyUid: data.counterpartyUid || "",
+          createdAt: historyDateToISO(data.createdAt)
         });
       });
 
-      // --------------------------------------
       // DEPOSIT REQUESTS
-      // Include pending deposits without ledger
-      // --------------------------------------
-
       depositSnap.forEach((doc) => {
         if (depositLedgerReferences.has(doc.id)) {
           return;
@@ -1256,28 +1277,17 @@ app.get(
         transactions.push({
           id: doc.id,
           referenceId: doc.id,
-
           type: "deposit",
           direction: "credit",
-
           amount: Number(data.amount || 0),
           currency: data.currency || "",
-
           status: data.status || "pending",
-
           methodName: data.methodName || "",
-
-          createdAt: historyDateToISO(
-            data.createdAt
-          )
+          createdAt: historyDateToISO(data.createdAt)
         });
       });
 
-      // --------------------------------------
       // INTERNATIONAL TRANSFERS
-      // Include pending transfers without ledger
-      // --------------------------------------
-
       internationalSnap.forEach((doc) => {
         if (internationalLedgerReferences.has(doc.id)) {
           return;
@@ -1288,25 +1298,16 @@ app.get(
         transactions.push({
           id: doc.id,
           referenceId: doc.id,
-
           type: "international_transfer",
           direction: "debit",
-
           amount: Number(data.sendAmount || 0),
           currency: data.sendCurrency || "",
-
           status: data.status || "pending",
-
-          createdAt: historyDateToISO(
-            data.createdAt
-          )
+          createdAt: historyDateToISO(data.createdAt)
         });
       });
 
-      // --------------------------------------
       // SORT NEWEST FIRST
-      // --------------------------------------
-
       transactions.sort((a, b) => {
         const dateA = a.createdAt
           ? new Date(a.createdAt).getTime()
@@ -1354,6 +1355,8 @@ app.get(
       const users = [];
       let pageToken;
 
+      const now = Date.now();
+
       do {
         const result = await firebaseAuth.listUsers(
           1000,
@@ -1379,6 +1382,25 @@ app.get(
               ? profileSnap.data()
               : {};
 
+            const lastSeenDate = profile.lastSeenAt
+              ? (
+                  typeof profile.lastSeenAt.toDate === "function"
+                    ? profile.lastSeenAt.toDate()
+                    : new Date(profile.lastSeenAt)
+                )
+              : null;
+
+            const lastSeenTime =
+              lastSeenDate instanceof Date &&
+              !Number.isNaN(lastSeenDate.getTime())
+                ? lastSeenDate.getTime()
+                : 0;
+
+            const online =
+              lastSeenTime > 0 &&
+              now >= lastSeenTime &&
+              now - lastSeenTime <= ONLINE_THRESHOLD_MS;
+
             users.push({
               uid: authUser.uid,
 
@@ -1402,7 +1424,12 @@ app.get(
               lastSignInTime:
                 authUser.metadata.lastSignInTime || null,
 
-              online: false
+              lastSeenAt:
+                lastSeenTime
+                  ? new Date(lastSeenTime).toISOString()
+                  : null,
+
+              online
             });
           }
         }
@@ -1424,12 +1451,16 @@ app.get(
         user => user.status === "pending"
       ).length;
 
+      const activeUsers = users.filter(
+        user => user.online
+      ).length;
+
       return res.json({
         success: true,
 
         stats: {
           totalUsers: users.length,
-          activeUsers: 0,
+          activeUsers,
           approvedUsers,
           pendingUsers
         },
@@ -1615,5 +1646,7 @@ app.listen(PORT, () => {
   console.log("HISTORY API: ENABLED");
   console.log("ADMIN USER MANAGEMENT: ENABLED");
   console.log("ADMIN USER APPROVAL: ENABLED");
+  console.log("ONLINE PRESENCE: ENABLED");
+  console.log("ONLINE THRESHOLD: 90 SECONDS");
   console.log("--------------------------------");
 });

@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#155eef">
+  <title>MYZEN MONEY - Settings</title>
+
+  <script>
+    (() => {
+      try {
+        const settings = JSON.parse(localStorage.getItem("myzen_settings") || "{}");
+        const theme = settings.theme || localStorage.getItem("myzen_theme") || "light";
+        document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
+      } catch {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      color-scheme: light;
+      --page-bg: #f1f5fb;
+      --card-bg: #ffffff;
+      --text: #172033;
+      --muted: #667085;
+      --border: #e8edf5;
+      --input-bg: #ffffff;
+      --blue: #155eef;
+      --secondary-bg: #eaf1ff;
+      --secondary-text: #155eef;
+      --shadow: 0 5px 20px rgba(0,0,0,.06);
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --page-bg: #101828;
+      --card-bg: #1d2939;
+      --text: #f2f4f7;
+      --muted: #98a2b3;
+      --border: #344054;
+      --input-bg: #101828;
+      --blue: #528bff;
+      --secondary-bg: #263b60;
+      --secondary-text: #b2ccff;
+      --shadow: 0 5px 20px rgba(0,0,0,.25);
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: var(--page-bg);
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      transition: background .2s, color .2s;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    h2 { margin-top: 0; }
+
+    .section-title {
+      margin-top: 28px;
+      margin-bottom: 12px;
+      font-size: 15px;
+      color: var(--blue);
+      font-weight: bold;
+    }
+
+    .setting-row {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .setting-label {
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 7px;
+    }
+
+    .setting-description {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .setting-value {
+      margin-top: 7px;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 15px;
+      margin-top: 8px;
+      outline-color: var(--blue);
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 14px;
+      border: 0;
+      border-radius: 9px;
+      background: var(--blue);
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .secondary {
+      background: var(--secondary-bg);
+      color: var(--secondary-text);
+    }
+
+    .danger { background: #d92d20; }
+
+    .message {
+      margin-top: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .success { color: #12b76a; }
+    .error { color: #f04438; }
+
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 27px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .switch-slider {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+      background: #98a2b3;
+      border-radius: 30px;
+      transition: .2s;
+    }
+
+    .switch-slider:before {
+      content: "";
+      position: absolute;
+      width: 19px;
+      height: 19px;
+      left: 4px;
+      top: 4px;
+      background: white;
+      border-radius: 50%;
+      transition: .2s;
+    }
+
+    .switch input:checked + .switch-slider {
+      background: var(--blue);
+    }
+
+    .switch input:checked + .switch-slider:before {
+      transform: translateX(21px);
+    }
+
+    .switch input:focus-visible + .switch-slider {
+      outline: 3px solid var(--blue);
+      outline-offset: 3px;
+    }
+
+    @media(max-width:480px) {
+      body { padding: 12px; }
+      .container { margin: 15px auto; }
+      .card { padding: 20px; }
+    }
+  </style>
+  <link rel="stylesheet" href="css/theme.css?v=20261127">
+  <link rel="stylesheet" href="css/history-settings.css?v=20261127">
+</head>
+
+<body>
+  <main class="container">
+    <section class="card">
+
+      <h2>MYZEN MONEY</h2>
+      <h3 id="pageTitle">Settings</h3>
+
+      <div class="section-title" id="accountTitle">ACCOUNT</div>
+
+      <div class="setting-row">
+        <div class="setting-label" id="profileLabel">Account Information</div>
+        <div class="setting-description" id="profileDescription">
+          View your personal information and wallet details.
+        </div>
+        <button type="button" class="secondary" id="profileBtn">View Profile</button>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-label" id="emailLabel">Login Email</div>
+        <div class="setting-value" id="userEmail">Loading...</div>
+      </div>
+
+      <div class="section-title" id="securityTitle">SECURITY</div>
+
+      <div class="setting-row">
+        <div class="setting-label" id="passwordLabel">Change Password</div>
+        <div class="setting-description" id="passwordDescription">
+          Receive a password reset link through your email.
+        </div>
+        <button type="button" id="resetPasswordBtn">Send Password Reset Email</button>
+      </div>
+
+      <div class="section-title" id="preferenceTitle">PREFERENCES</div>
+
+      <div class="setting-row">
+        <div class="setting-label" id="languageLabel">Language</div>
+        <div class="setting-description" id="languageDescription">
+          Select your preferred language.
+        </div>
+        <select id="languageSelect">
+          <option value="en">English</option>
+          <option value="my">မြန်မာ</option>
+          <option value="th">ไทย</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-label" id="themeLabel">Appearance</div>
+        <div class="setting-description" id="themeDescription">
+          Choose Light Mode or Dark Mode.
+        </div>
+
+        <select id="themeSelect">
+          <option value="light">Light Mode</option>
+          <option value="dark">Dark Mode</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-label" id="depositSlipLabel">Deposit Slip Display</div>
+        <div class="setting-description" id="depositSlipDescription">
+          Allow deposit slip images to be displayed in your deposit history.
+        </div>
+
+        <div class="switch-row">
+          <span id="depositSlipStatus">Enabled</span>
+          <label class="switch">
+            <input type="checkbox" id="depositSlipToggle" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <button type="button" class="secondary" id="depositHistoryBtn">
+          View Deposit History
+        </button>
+      </div>
+
+      <button type="button" id="saveSettingsBtn">Save Settings</button>
+
+      <div id="settingsMessage" class="message" role="status" aria-live="polite"></div>
+
+      <button type="button" class="secondary" id="dashboardBtn">
+        Back to Dashboard
+      </button>
+
+      <button type="button" class="danger" id="logoutBtn">Logout</button>
+
+    </section>
+  </main>
+
+  <script type="module" src="js/settings.js?v=20261126-2"></script>
+</body>
+</html>

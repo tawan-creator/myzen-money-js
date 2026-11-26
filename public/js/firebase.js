@@ -31,12 +31,21 @@ const firebaseConfig = {
   measurementId: "G-Q7ZFPJMKD2"
 };
 
-// Initialize Firebase only once
+const API_BASE_URL =
+  "https://myzen-money-js.onrender.com";
+
+// ==========================================
+// FIREBASE APP
+// ==========================================
+
 const app = getApps().length
   ? getApp()
   : initializeApp(firebaseConfig);
 
-// Initialize Authentication
+// ==========================================
+// FIREBASE AUTH
+// ==========================================
+
 let auth;
 
 try {
@@ -51,8 +60,117 @@ try {
   }
 }
 
-// Initialize Firestore
+// ==========================================
+// FIRESTORE
+// ==========================================
+
 const db = getFirestore(app);
+
+// ==========================================
+// MYZEN MONEY - USER PRESENCE
+// Heartbeat every 30 seconds
+// ==========================================
+
+let heartbeatTimer = null;
+let heartbeatBusy = false;
+let currentPresenceUser = null;
+
+async function sendPresenceHeartbeat(user) {
+  if (!user || heartbeatBusy) return;
+
+  if (
+    typeof document !== "undefined" &&
+    document.visibilityState === "hidden"
+  ) {
+    return;
+  }
+
+  heartbeatBusy = true;
+
+  try {
+    const token = await user.getIdToken();
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/presence/heartbeat`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.warn(
+        "MYZEN PRESENCE ERROR:",
+        response.status
+      );
+    }
+
+  } catch (error) {
+    console.warn(
+      "MYZEN PRESENCE HEARTBEAT FAILED:",
+      error.message
+    );
+
+  } finally {
+    heartbeatBusy = false;
+  }
+}
+
+function stopPresenceHeartbeat() {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+
+  currentPresenceUser = null;
+}
+
+// ==========================================
+// AUTH STATE LISTENER
+// ==========================================
+
+onAuthStateChanged(auth, (user) => {
+  stopPresenceHeartbeat();
+
+  if (!user) return;
+
+  currentPresenceUser = user;
+
+  // First heartbeat
+  sendPresenceHeartbeat(user);
+
+  // Repeat every 30 seconds
+  heartbeatTimer = setInterval(() => {
+    if (currentPresenceUser) {
+      sendPresenceHeartbeat(currentPresenceUser);
+    }
+  }, 30000);
+});
+
+// ==========================================
+// PAGE VISIBILITY
+// ==========================================
+
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (
+        document.visibilityState === "visible" &&
+        currentPresenceUser
+      ) {
+        sendPresenceHeartbeat(currentPresenceUser);
+      }
+    }
+  );
+}
+
+// ==========================================
+// EXPORT
+// ==========================================
 
 export {
   app,

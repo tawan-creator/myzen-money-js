@@ -237,7 +237,7 @@ async function generateReceiveQR(code) {
     text: "MYZEN-MONEY:" + code,
     width: 220,
     height: 220,
-    colorDark: "#17315e",
+    colorDark: "#c7a24b",
     colorLight: "#ffffff",
     correctLevel: window.QRCode.CorrectLevel.H
   });

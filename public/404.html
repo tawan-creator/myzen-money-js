@@ -3,7 +3,21 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Page Not Found</title>
+    
+  <script>
+    (() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem("myzen_settings") || "{}");
+        const theme = saved.theme || localStorage.getItem("myzen_theme") || "light";
+        const valid = theme === "dark" ? "dark" : "light";
+        document.documentElement.dataset.theme = valid;
+        document.documentElement.style.colorScheme = valid;
+      } catch (error) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+<title>Page Not Found</title>
 
     <style media="screen">
       body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
@@ -20,7 +34,8 @@
         body { border-top: 16px solid #ffa100; }
       }
     </style>
-  </head>
+    <link rel="stylesheet" href="css/theme.css?v=20261127">
+</head>
   <body>
     <div id="message">
       <h2>404</h2>
