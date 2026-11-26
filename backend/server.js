@@ -1163,6 +1163,7 @@ app.use(
   })
 );
 
+
 // ==========================================
 // USER TRANSACTION HISTORY
 // GET /api/history/my
@@ -1201,7 +1202,10 @@ app.get(
       const depositLedgerReferences = new Set();
       const internationalLedgerReferences = new Set();
 
+      // ==========================================
       // WALLET LEDGER
+      // ==========================================
+
       ledgerSnap.forEach((doc) => {
         const data = doc.data();
 
@@ -1210,7 +1214,7 @@ app.get(
           data.transferId ||
           "";
 
-        let type = data.type || "";
+        let type = String(data.type || "").toLowerCase();
 
         if (!type && data.transferId) {
           type = "wallet_transfer";
@@ -1218,6 +1222,18 @@ app.get(
 
         if (!type) {
           type = "transaction";
+        }
+
+        // Detect international refund
+        const isInternationalRefund =
+          type === "international_transfer_refund" ||
+          (
+            doc.id.startsWith("international_") &&
+            doc.id.endsWith("_REFUND")
+          );
+
+        if (isInternationalRefund) {
+          type = "international_transfer_refund";
         }
 
         if (type === "deposit") {
@@ -1251,6 +1267,12 @@ app.get(
           }
         }
 
+        // Refund history displays rejected,
+        // but actual wallet ledger remains unchanged.
+        const historyStatus = isInternationalRefund
+          ? "rejected"
+          : (data.status || "completed");
+
         transactions.push({
           id: doc.id,
           referenceId,
@@ -1260,13 +1282,16 @@ app.get(
           currency: data.currency || "",
           balanceBefore: data.balanceBefore ?? null,
           balanceAfter: data.balanceAfter ?? null,
-          status: data.status || "completed",
+          status: historyStatus,
           counterpartyUid: data.counterpartyUid || "",
           createdAt: historyDateToISO(data.createdAt)
         });
       });
 
+      // ==========================================
       // DEPOSIT REQUESTS
+      // ==========================================
+
       depositSnap.forEach((doc) => {
         if (depositLedgerReferences.has(doc.id)) {
           return;
@@ -1287,7 +1312,10 @@ app.get(
         });
       });
 
+      // ==========================================
       // INTERNATIONAL TRANSFERS
+      // ==========================================
+
       internationalSnap.forEach((doc) => {
         if (internationalLedgerReferences.has(doc.id)) {
           return;
@@ -1307,7 +1335,10 @@ app.get(
         });
       });
 
+      // ==========================================
       // SORT NEWEST FIRST
+      // ==========================================
+
       transactions.sort((a, b) => {
         const dateA = a.createdAt
           ? new Date(a.createdAt).getTime()
@@ -1340,313 +1371,3 @@ app.get(
     }
   }
 );
-
-// ==========================================
-// ADMIN USER MANAGEMENT
-// GET /api/admin/users
-// ==========================================
-
-app.get(
-  "/api/admin/users",
-  requireAuth,
-  requireAdmin,
-  async (req, res) => {
-    try {
-      const users = [];
-      let pageToken;
-
-      const now = Date.now();
-
-      do {
-        const result = await firebaseAuth.listUsers(
-          1000,
-          pageToken
-        );
-
-        const authUsers = result.users || [];
-
-        for (let i = 0; i < authUsers.length; i += 100) {
-          const batch = authUsers.slice(i, i + 100);
-
-          const refs = batch.map(user =>
-            db.collection("users").doc(user.uid)
-          );
-
-          const snapshots = await db.getAll(...refs);
-
-          for (let j = 0; j < batch.length; j++) {
-            const authUser = batch[j];
-            const profileSnap = snapshots[j];
-
-            const profile = profileSnap.exists
-              ? profileSnap.data()
-              : {};
-
-            const lastSeenDate = profile.lastSeenAt
-              ? (
-                  typeof profile.lastSeenAt.toDate === "function"
-                    ? profile.lastSeenAt.toDate()
-                    : new Date(profile.lastSeenAt)
-                )
-              : null;
-
-            const lastSeenTime =
-              lastSeenDate instanceof Date &&
-              !Number.isNaN(lastSeenDate.getTime())
-                ? lastSeenDate.getTime()
-                : 0;
-
-            const online =
-              lastSeenTime > 0 &&
-              now >= lastSeenTime &&
-              now - lastSeenTime <= ONLINE_THRESHOLD_MS;
-
-            users.push({
-              uid: authUser.uid,
-
-              name:
-                profile.name ||
-                authUser.displayName ||
-                "",
-
-              email:
-                profile.email ||
-                authUser.email ||
-                "",
-
-              status:
-                String(profile.status || "unknown")
-                  .toLowerCase(),
-
-              createdAt:
-                authUser.metadata.creationTime || null,
-
-              lastSignInTime:
-                authUser.metadata.lastSignInTime || null,
-
-              lastSeenAt:
-                lastSeenTime
-                  ? new Date(lastSeenTime).toISOString()
-                  : null,
-
-              online
-            });
-          }
-        }
-
-        pageToken = result.pageToken;
-
-      } while (pageToken);
-
-      users.sort((a, b) => {
-        return new Date(b.createdAt || 0) -
-               new Date(a.createdAt || 0);
-      });
-
-      const approvedUsers = users.filter(
-        user => user.status === "approved"
-      ).length;
-
-      const pendingUsers = users.filter(
-        user => user.status === "pending"
-      ).length;
-
-      const activeUsers = users.filter(
-        user => user.online
-      ).length;
-
-      return res.json({
-        success: true,
-
-        stats: {
-          totalUsers: users.length,
-          activeUsers,
-          approvedUsers,
-          pendingUsers
-        },
-
-        users
-      });
-
-    } catch (error) {
-      console.error(
-        "ADMIN USERS API ERROR:",
-        error
-      );
-
-      return sendError(
-        res,
-        500,
-        "Unable to load users."
-      );
-    }
-  }
-);
-
-// ==========================================
-// APPROVE USER
-// POST /api/admin/users/:uid/approve
-// ==========================================
-
-app.post(
-  "/api/admin/users/:uid/approve",
-  requireAuth,
-  requireAdmin,
-  async (req, res) => {
-    try {
-      const uid = String(req.params.uid || "").trim();
-
-      if (
-        !uid ||
-        uid.length > 128 ||
-        uid.includes("/")
-      ) {
-        return sendError(
-          res,
-          400,
-          "Invalid user ID."
-        );
-      }
-
-      const userRef = db
-        .collection("users")
-        .doc(uid);
-
-      const result = await db.runTransaction(
-        async (transaction) => {
-          const userSnap = await transaction.get(userRef);
-
-          if (!userSnap.exists) {
-            throw new Error("USER_PROFILE_NOT_FOUND");
-          }
-
-          const user = userSnap.data();
-
-          const status = String(
-            user.status || ""
-          ).toLowerCase();
-
-          if (status === "approved") {
-            throw new Error("USER_ALREADY_APPROVED");
-          }
-
-          if (status !== "pending") {
-            throw new Error("USER_NOT_PENDING");
-          }
-
-          transaction.update(userRef, {
-            status: "approved",
-            approvedAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp()
-          });
-
-          return {
-            uid,
-            name: user.name || "",
-            email: user.email || ""
-          };
-        }
-      );
-
-      console.log(
-        "USER APPROVED:",
-        result.uid,
-        "BY:",
-        req.user.email
-      );
-
-      return res.json({
-        success: true,
-        message: "User approved successfully.",
-        user: result
-      });
-
-    } catch (error) {
-      console.error(
-        "APPROVE USER ERROR:",
-        error
-      );
-
-      const errors = {
-        USER_PROFILE_NOT_FOUND: {
-          status: 404,
-          message: "User profile not found."
-        },
-
-        USER_ALREADY_APPROVED: {
-          status: 400,
-          message: "This user is already approved."
-        },
-
-        USER_NOT_PENDING: {
-          status: 400,
-          message: "This user is not pending approval."
-        }
-      };
-
-      const knownError = errors[error.message];
-
-      if (knownError) {
-        return sendError(
-          res,
-          knownError.status,
-          knownError.message
-        );
-      }
-
-      return sendError(
-        res,
-        500,
-        "Unable to approve user."
-      );
-    }
-  }
-);
-
-// ==========================================
-// UNKNOWN API ROUTE
-// ==========================================
-
-app.use("/api", (req, res) => {
-  return sendError(
-    res,
-    404,
-    "API endpoint not found."
-  );
-});
-
-// ==========================================
-// GLOBAL ERROR HANDLER
-// ==========================================
-
-app.use((error, req, res, next) => {
-  console.error("SERVER ERROR:", error);
-
-  if (res.headersSent) {
-    return next(error);
-  }
-
-  return sendError(
-    res,
-    500,
-    "Internal server error."
-  );
-});
-
-// ==========================================
-// START SERVER
-// ==========================================
-
-app.listen(PORT, () => {
-  console.log("--------------------------------");
-  console.log("MYZEN MONEY BACKEND STARTED");
-  console.log("PORT:", PORT);
-  console.log("TRANSFER MODE: WALLET_TO_WALLET");
-  console.log("DEPOSIT API: ENABLED");
-  console.log("HISTORY API: ENABLED");
-  console.log("ADMIN USER MANAGEMENT: ENABLED");
-  console.log("ADMIN USER APPROVAL: ENABLED");
-  console.log("ONLINE PRESENCE: ENABLED");
-  console.log("ONLINE THRESHOLD: 90 SECONDS");
-  console.log("--------------------------------");
-});
