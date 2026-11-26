@@ -5,57 +5,117 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  
   <script>
     (() => {
       try {
-        const saved = JSON.parse(localStorage.getItem("myzen_settings") || "{}");
-        const theme = saved.theme || localStorage.getItem("myzen_theme") || "light";
-        const valid = theme === "dark" ? "dark" : "light";
+        const saved = JSON.parse(
+          localStorage.getItem("myzen_settings") || "{}"
+        );
+
+        const theme =
+          saved.theme ||
+          localStorage.getItem("myzen_theme") ||
+          "dark";
+
+        const valid = theme === "light" ? "light" : "dark";
+
         document.documentElement.dataset.theme = valid;
         document.documentElement.style.colorScheme = valid;
       } catch (error) {
-        document.documentElement.dataset.theme = "light";
+        document.documentElement.dataset.theme = "dark";
+        document.documentElement.style.colorScheme = "dark";
       }
     })();
   </script>
-<title>MYZEN MONEY - Scan & Transfer</title>
+
+  <title>MYZEN MONEY - Scan & Transfer</title>
 
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/theme.css?v=20261127">
 
   <style>
     * {
       box-sizing: border-box;
     }
 
+    :root {
+      --scan-bg: #090909;
+      --scan-card: #151515;
+      --scan-panel: #1d1a14;
+      --scan-input: #0d0d0d;
+      --scan-gold: #d6ad55;
+      --scan-gold-light: #f0d58e;
+      --scan-text: #f0e5ca;
+      --scan-muted: #b9aa87;
+      --scan-border: #514124;
+      --scan-status-bg: #282115;
+      --scan-status-text: #f0d58e;
+      --scan-notice-bg: #211d15;
+      --scan-danger-bg: #2b1715;
+      --scan-danger-text: #f0aaa0;
+      --scan-shadow: 0 12px 35px rgba(0,0,0,.35);
+    }
+
+    html[data-theme="light"] {
+      --scan-bg: #eee9dc;
+      --scan-card: #f8f4e9;
+      --scan-panel: #eee5d2;
+      --scan-input: #fffaf0;
+      --scan-gold: #987329;
+      --scan-gold-light: #79591d;
+      --scan-text: #282216;
+      --scan-muted: #71664f;
+      --scan-border: #d5c49b;
+      --scan-status-bg: #e9dfc8;
+      --scan-status-text: #70521c;
+      --scan-notice-bg: #eee5d2;
+      --scan-danger-bg: #f3e2dc;
+      --scan-danger-text: #913e32;
+      --scan-shadow: 0 12px 30px rgba(65,48,15,.08);
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      background: var(--scan-bg) !important;
+      color: var(--scan-text) !important;
+    }
+
     body {
       margin: 0;
       padding: 18px;
-      background: #eef4ff;
       font-family: Arial, sans-serif;
-      color: #17315e;
+      transition: background .25s, color .25s;
     }
 
     .container {
+      width: 100%;
       max-width: 550px;
       margin: 25px auto;
     }
 
     .card {
-      background: white;
+      background: var(--scan-card) !important;
+      color: var(--scan-text) !important;
       padding: 25px;
+      border: 1px solid var(--scan-border);
       border-radius: 22px;
-      box-shadow: 0 10px 35px #164d9918;
+      box-shadow: var(--scan-shadow);
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--scan-gold) !important;
     }
 
     h1 {
-      color: #0755d9;
       margin-top: 0;
+      font-size: 27px;
     }
 
     h2 {
       font-size: 19px;
-      color: #17315e;
     }
 
     h3 {
@@ -64,20 +124,26 @@
     }
 
     .subtitle {
-      color: #71829c;
-      line-height: 1.6;
+      color: var(--scan-muted) !important;
+      line-height: 1.7;
     }
 
     .back {
       display: inline-block;
       margin-bottom: 18px;
-      color: #0755d9;
+      color: var(--scan-gold) !important;
       text-decoration: none;
       font-weight: bold;
     }
 
+    .back:hover {
+      color: var(--scan-gold-light) !important;
+    }
+
     .country-box {
-      background: #eaf2ff;
+      background: var(--scan-panel) !important;
+      color: var(--scan-text) !important;
+      border: 1px solid var(--scan-border);
       padding: 17px;
       border-radius: 13px;
       margin: 20px 0;
@@ -87,105 +153,192 @@
     .country-box strong {
       display: block;
       font-size: 18px;
+      color: var(--scan-gold) !important;
+    }
+
+    #accountCountry,
+    #accountCurrency {
+      color: var(--scan-text) !important;
     }
 
     .gps-status {
       margin-top: 12px;
       padding: 12px;
-      background: #fff7e6;
-      color: #805900;
+      background: var(--scan-status-bg) !important;
+      color: var(--scan-status-text) !important;
+      border: 1px solid var(--scan-border);
       border-radius: 10px;
       font-size: 13px;
       line-height: 1.6;
     }
 
     .scanner-box {
-      background: #f7faff;
-      border: 1px solid #dce8fa;
+      background: var(--scan-card) !important;
+      color: var(--scan-text) !important;
+      border: 1px solid var(--scan-border);
       padding: 18px;
       border-radius: 15px;
       margin-top: 20px;
     }
 
+    /*
+      QR CAMERA:
+      Keep camera/video brightness unchanged.
+      QR scanning needs the original camera image.
+    */
+
     #reader {
       width: 100%;
       overflow: hidden;
       border-radius: 12px;
-      background: white;
+      background: #ffffff !important;
       margin-top: 15px;
+      border: 1px solid var(--scan-border);
+      color: #222 !important;
     }
 
     #reader video {
+      display: block;
+      width: 100%;
+      max-width: 100%;
       border-radius: 10px;
+      object-fit: cover;
+      filter: none !important;
+    }
+
+    #reader canvas {
+      max-width: 100%;
+    }
+
+    #reader__scan_region {
+      background: #ffffff !important;
+      color: #222 !important;
+    }
+
+    #reader__dashboard {
+      background: var(--scan-card) !important;
+      color: var(--scan-text) !important;
+      padding: 10px !important;
+    }
+
+    #reader__dashboard span,
+    #reader__dashboard label {
+      color: var(--scan-text) !important;
+    }
+
+    #reader button,
+    #reader select {
+      background: var(--scan-panel) !important;
+      color: var(--scan-gold) !important;
+      border: 1px solid var(--scan-gold) !important;
+      border-radius: 8px !important;
+      padding: 8px !important;
     }
 
     .btn {
       width: 100%;
       padding: 15px;
-      border: none;
+      border: 1px solid var(--scan-gold);
       border-radius: 11px;
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
       margin-top: 12px;
+      transition: .2s ease;
     }
 
     .primary {
-      background: linear-gradient(120deg, #087cff, #0643c5);
-      color: white;
+      background: linear-gradient(
+        120deg,
+        #e4c477,
+        #a77d2e
+      ) !important;
+      color: #100d07 !important;
+      border-color: #e1bd68 !important;
+    }
+
+    .primary:hover:not(:disabled) {
+      background: linear-gradient(
+        120deg,
+        #f2d995,
+        #c49a45
+      ) !important;
+      transform: translateY(-1px);
     }
 
     .secondary {
-      background: #e5efff;
-      color: #0755d9;
+      background: var(--scan-panel) !important;
+      color: var(--scan-gold) !important;
+      border-color: var(--scan-gold) !important;
+    }
+
+    .secondary:hover:not(:disabled) {
+      filter: brightness(1.08);
     }
 
     .danger {
-      background: #fee2e2;
-      color: #b91c1c;
+      background: var(--scan-danger-bg) !important;
+      color: var(--scan-danger-text) !important;
+      border-color: #a85c50 !important;
+    }
+
+    .danger:hover:not(:disabled) {
+      filter: brightness(1.08);
     }
 
     .btn:disabled {
-      opacity: .5;
+      opacity: .48;
       cursor: not-allowed;
     }
 
     .receive-code-lookup {
       margin: 22px 0;
       padding: 20px;
-      background: #f0f6ff;
-      border: 1px solid #dce8fa;
+      background: var(--scan-panel) !important;
+      color: var(--scan-text) !important;
+      border: 1px solid var(--scan-border);
       border-radius: 15px;
     }
 
+    .receive-code-lookup h3 {
+      color: var(--scan-gold) !important;
+    }
+
     .receive-code-lookup p {
-      color: #71829c;
+      color: var(--scan-muted) !important;
       font-size: 13px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
     .receive-code-lookup input {
       width: 100%;
       padding: 16px;
-      border: 1px solid #d5e0f0;
+      background: var(--scan-input) !important;
+      border: 1px solid var(--scan-gold) !important;
       border-radius: 10px;
       font-size: 22px;
       text-align: center;
       letter-spacing: 7px;
       font-weight: bold;
-      color: #0755d9;
+      color: var(--scan-gold) !important;
       outline: none;
+    }
+
+    .receive-code-lookup input::placeholder {
+      color: var(--scan-muted) !important;
+      opacity: .7;
     }
 
     .divider {
       border: 0;
-      border-top: 1px solid #e5edf8;
+      border-top: 1px solid var(--scan-border);
       margin: 24px 0;
     }
 
     .recipient-box {
-      background: #ecfdf5;
-      border: 1px solid #bbf7d0;
+      background: var(--scan-panel) !important;
+      color: var(--scan-text) !important;
+      border: 1px solid var(--scan-gold);
       padding: 18px;
       border-radius: 14px;
       margin: 20px 0;
@@ -193,19 +346,20 @@
     }
 
     .recipient-box strong {
-      color: #166534;
+      color: var(--scan-gold) !important;
     }
 
     .recipient-value {
       display: block;
       overflow-wrap: anywhere;
       font-weight: bold;
-      color: #17315e;
+      color: var(--scan-text) !important;
     }
 
     label {
       display: block;
       font-weight: bold;
+      color: var(--scan-gold) !important;
       margin: 17px 0 8px;
     }
 
@@ -213,10 +367,24 @@
     textarea {
       width: 100%;
       padding: 14px;
-      border: 1px solid #d5e0f0;
+      background: var(--scan-input) !important;
+      color: var(--scan-text) !important;
+      border: 1px solid var(--scan-border) !important;
       border-radius: 10px;
       font-size: 16px;
       font-family: Arial, sans-serif;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--scan-muted) !important;
+      opacity: .8;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: 2px solid var(--scan-gold) !important;
+      border-color: var(--scan-gold) !important;
     }
 
     textarea {
@@ -224,15 +392,12 @@
       min-height: 85px;
     }
 
-    input:focus,
-    textarea:focus {
-      outline: 2px solid #2374ed;
-    }
-
     #scanMessage {
       margin-top: 15px;
       padding: 12px;
-      background: #f1f5f9;
+      background: var(--scan-status-bg) !important;
+      color: var(--scan-status-text) !important;
+      border: 1px solid var(--scan-border);
       border-radius: 10px;
       line-height: 1.6;
       overflow-wrap: anywhere;
@@ -240,8 +405,9 @@
     }
 
     .notice {
-      background: #fff8e5;
-      color: #805900;
+      background: var(--scan-notice-bg) !important;
+      color: var(--scan-text) !important;
+      border: 1px solid var(--scan-border);
       padding: 14px;
       border-radius: 11px;
       margin-top: 20px;
@@ -249,17 +415,28 @@
       line-height: 1.7;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     @media (max-width: 480px) {
       body {
         padding: 12px;
       }
 
+      .container {
+        margin: 12px auto;
+      }
+
       .card {
         padding: 19px;
       }
+
+      h1 {
+        font-size: 24px;
+      }
     }
   </style>
-  <link rel="stylesheet" href="css/theme.css?v=20261127">
 </head>
 
 <body>
@@ -278,8 +455,6 @@
       Scan a MYZEN MONEY QR Code or enter a 6-digit Receive Code
       to find the recipient wallet.
     </p>
-
-    <!-- SENDER ACCOUNT -->
 
     <div class="country-box">
 
@@ -302,8 +477,6 @@
       </button>
 
     </div>
-
-    <!-- QR SCANNER -->
 
     <div class="scanner-box">
 
@@ -335,8 +508,6 @@
 
     </div>
 
-    <!-- MANUAL CODE -->
-
     <div class="receive-code-lookup">
 
       <h3>Or Enter Receive Code</h3>
@@ -366,15 +537,11 @@
 
     </div>
 
-    <!-- STATUS -->
-
     <div id="scanMessage">
       Waiting for account and GPS verification...
     </div>
 
     <hr class="divider">
-
-    <!-- RECIPIENT -->
 
     <div
       class="recipient-box"
@@ -401,8 +568,6 @@
       <span class="recipient-value" id="recipientUid">-</span>
 
     </div>
-
-    <!-- TRANSFER FORM -->
 
     <form id="qrTransferForm">
 
@@ -464,12 +629,8 @@
   </div>
 </div>
 
-
-<!-- QR SCANNER LIBRARY -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 
-
-<!-- GPS LOCATION -->
 <script>
 window.MYZEN_LOCATION = {
   country: "",
@@ -560,9 +721,6 @@ function detectMyzenGPS() {
         gpsStatusEl.textContent =
           "GPS verified: " + country + " (" + currency + ")";
 
-        gpsStatusEl.style.background = "#ecfdf5";
-        gpsStatusEl.style.color = "#166534";
-
         window.dispatchEvent(
           new Event("myzenlocationchange")
         );
@@ -615,8 +773,6 @@ document.getElementById("retryGPS").addEventListener(
 detectMyzenGPS();
 </script>
 
-
-<!-- SCAN JAVASCRIPT -->
 <script type="module" src="js/scan.js"></script>
 
 </body>
