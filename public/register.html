@@ -1,10 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <meta name="theme-color" content="#073b70">
+  <meta name="description" content="Create your MYZEN MONEY wallet account securely.">
+
   <title>MYZEN MONEY - Create Account</title>
+
   <link rel="stylesheet" href="css/style.css">
 
   <style>
@@ -67,22 +72,10 @@
       font-weight: 800;
     }
 
-    .logo-area p {
+    .welcome-subtitle {
       color: #8190a5;
       margin: 9px 0 0;
       font-size: 14px;
-    }
-
-    .welcome-title {
-      font-size: 23px;
-      margin: 0 0 7px;
-      color: #17243b;
-    }
-
-    .welcome-subtitle {
-      color: #8290a3;
-      font-size: 13px;
-      margin: 0 0 25px;
       line-height: 1.6;
     }
 
@@ -143,17 +136,6 @@
       padding: 8px;
     }
 
-    .demo-notice {
-      padding: 12px 14px;
-      background: #fff8e8;
-      border: 1px solid #f4dfad;
-      border-radius: 11px;
-      color: #85621b;
-      font-size: 12px;
-      line-height: 1.6;
-      margin: 5px 0 20px;
-    }
-
     .btn-block {
       width: 100%;
       height: 51px;
@@ -181,7 +163,7 @@
 
     #registerMessage {
       font-size: 13px;
-      line-height: 1.6;
+      line-height: 1.7;
       text-align: center;
       margin: 15px 0 0;
       overflow-wrap: anywhere;
@@ -224,10 +206,6 @@
       .logo-area h1 {
         font-size: 24px;
       }
-
-      .welcome-title {
-        font-size: 21px;
-      }
     }
   </style>
 </head>
@@ -239,17 +217,19 @@
 
     <div class="logo-area">
       <div class="logo-icon">M</div>
+
       <h1>MYZEN MONEY</h1>
+
       <p class="welcome-subtitle">
-      Join MYZEN MONEY and manage your wallet securely.
-    </p>
-    
+        Join MYZEN MONEY and manage your wallet securely.
+      </p>
     </div>
 
     <form id="registerForm">
 
       <div class="form-group">
         <label for="country">Select Your Country</label>
+
         <select id="country" required>
           <option value="">Choose Country</option>
           <option value="Thailand">🇹🇭 Thailand</option>
@@ -259,63 +239,110 @@
 
       <div class="form-group">
         <label for="name">Full Name</label>
-        <input id="name" type="text"
+
+        <input
+          id="name"
+          type="text"
           placeholder="Enter full name"
-          required minlength="2" autocomplete="name">
+          required
+          minlength="2"
+          autocomplete="name"
+        >
       </div>
 
       <div class="form-group">
         <label for="nrc">NRC Number (National ID)</label>
-        <input id="nrc" type="text"
+
+        <input
+          id="nrc"
+          type="text"
           placeholder="Enter NRC number"
-          required>
+          required
+          autocomplete="off"
+        >
       </div>
 
       <div class="form-group">
         <label for="phone">Phone Number</label>
-        <input id="phone" type="tel"
+
+        <input
+          id="phone"
+          type="tel"
           placeholder="Enter phone number"
-          required autocomplete="tel">
+          required
+          autocomplete="tel"
+        >
       </div>
 
       <div class="form-group">
         <label for="email">Email Address</label>
-        <input id="email" type="email"
+
+        <input
+          id="email"
+          type="email"
           placeholder="Enter email address"
-          required autocomplete="email">
+          required
+          autocomplete="email"
+        >
       </div>
 
       <div class="form-group">
         <label for="password">Password</label>
+
         <div class="password-wrap">
-          <input id="password" type="password"
+          <input
+            id="password"
+            type="password"
             placeholder="Minimum 6 characters"
-            required minlength="6"
-            autocomplete="new-password">
-          <button type="button" class="toggle-password"
-            onclick="togglePassword('password', this)">SHOW</button>
+            required
+            minlength="6"
+            autocomplete="new-password"
+          >
+
+          <button
+            type="button"
+            class="toggle-password"
+            onclick="togglePassword('password', this)"
+          >SHOW</button>
         </div>
       </div>
 
       <div class="form-group">
         <label for="confirmPassword">Confirm Password</label>
+
         <div class="password-wrap">
-          <input id="confirmPassword" type="password"
+          <input
+            id="confirmPassword"
+            type="password"
             placeholder="Confirm your password"
-            required minlength="6"
-            autocomplete="new-password">
-          <button type="button" class="toggle-password"
-            onclick="togglePassword('confirmPassword', this)">SHOW</button>
+            required
+            minlength="6"
+            autocomplete="new-password"
+          >
+
+          <button
+            type="button"
+            class="toggle-password"
+            onclick="togglePassword('confirmPassword', this)"
+          >SHOW</button>
         </div>
       </div>
 
-      <button type="submit" id="registerBtn" class="btn-block">
+      <button
+        type="submit"
+        id="registerBtn"
+        class="btn-block"
+      >
         Create Account →
       </button>
 
     </form>
 
-    <p id="registerMessage" role="status" aria-live="polite"></p>
+    <p
+      id="registerMessage"
+      role="status"
+      aria-live="polite"
+    ></p>
 
     <p class="login-link">
       Already have an account?
@@ -333,6 +360,8 @@
   function togglePassword(id, button) {
     const input = document.getElementById(id);
 
+    if (!input) return;
+
     if (input.type === "password") {
       input.type = "text";
       button.textContent = "HIDE";
@@ -343,7 +372,11 @@
   }
 </script>
 
-<script type="module" src="auth.js"></script>
+<!-- Correct Registration JavaScript -->
+<script
+  type="module"
+  src="js/register.js?v=20261125-4"
+></script>
 
 </body>
 </html>

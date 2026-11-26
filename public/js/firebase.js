@@ -1,15 +1,24 @@
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {
+  initializeApp,
+  getApps,
+  getApp
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
   initializeAuth,
   browserSessionPersistence,
-  onAuthStateChanged
+  onAuthStateChanged,
+  getAuth
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
 import {
   getFirestore
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+// ==========================================
+// MYZEN MONEY - FIREBASE CONFIGURATION
+// ==========================================
 
 const firebaseConfig = {
   apiKey: "AIzaSyBhy1tSWb_W-xI11w9l7DD5zPPVjKUttsE",
@@ -22,13 +31,27 @@ const firebaseConfig = {
   measurementId: "G-Q7ZFPJMKD2"
 };
 
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only once
+const app = getApps().length
+  ? getApp()
+  : initializeApp(firebaseConfig);
 
-// Each browser tab gets its own authentication session
-const auth = initializeAuth(app, {
-  persistence: browserSessionPersistence
-});
+// Initialize Authentication
+let auth;
 
+try {
+  auth = initializeAuth(app, {
+    persistence: browserSessionPersistence
+  });
+} catch (error) {
+  if (error.code === "auth/already-initialized") {
+    auth = getAuth(app);
+  } else {
+    throw error;
+  }
+}
+
+// Initialize Firestore
 const db = getFirestore(app);
 
 export {
