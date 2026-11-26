@@ -34,7 +34,7 @@ function showReceiveCodeMessage(text, success = false) {
   if (receiveCodeMessage) {
     receiveCodeMessage.textContent = text;
     receiveCodeMessage.style.color =
-      success ? "#15803d" : "#71829c";
+      success ? "#c7a24b" : "#b7ad98";
   } else {
     console.warn("HTML element #receiveCodeMessage not found:", text);
   }
@@ -133,7 +133,6 @@ async function getOrCreateReceiveCode(user, profile) {
 
   const privateSnap = await getDoc(privateRef);
 
-  // EXISTING CODE
   if (privateSnap.exists()) {
     const existingCode = String(
       privateSnap.data().code || ""
@@ -163,7 +162,6 @@ async function getOrCreateReceiveCode(user, profile) {
     return existingCode;
   }
 
-  // CREATE NEW CODE
   for (let attempt = 0; attempt < 20; attempt++) {
     const code = createRandomCode();
 
@@ -237,8 +235,13 @@ async function generateReceiveQR(code) {
     text: "MYZEN-MONEY:" + code,
     width: 220,
     height: 220,
-    colorDark: "#c7a24b",
-    colorLight: "#ffffff",
+
+    // Dark modules for reliable QR scanning
+    colorDark: "#111111",
+
+    // Soft warm background to reduce glare
+    colorLight: "#f5efdf",
+
     correctLevel: window.QRCode.CorrectLevel.H
   });
 }
@@ -445,7 +448,7 @@ onAuthStateChanged(auth, async (user) => {
       messageEl.textContent =
         error.message || "Unable to load wallet.";
 
-      messageEl.style.color = "#991b1b";
+      messageEl.style.color = "#dc4545";
     }
   }
 });

@@ -9,7 +9,7 @@
   <title>MYZEN MONEY - Dashboard</title>
 
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/dashboard.css?v=20261126">
+  <link rel="stylesheet" href="css/dashboard.css?v=20261127">
   <link rel="stylesheet" href="css/theme.css?v=20261127">
 
   <script>
@@ -82,7 +82,7 @@
       padding: 20px;
     }
 
-    /* SIMPLE BRAND HEADER */
+    /* HEADER */
 
     .dashboard-header {
       display: flex;
@@ -112,14 +112,12 @@
       margin: 0;
     }
 
-    /* BALANCE */
+    /* MAIN WALLET BALANCE */
 
     .balance-card {
-      background: linear-gradient(
-        135deg,
-        #292115,
-        #17140e
-      ) !important;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg,#292115,#17140e) !important;
       color: #f4eee0 !important;
       padding: 28px;
       border: 1px solid var(--gold-dark);
@@ -128,12 +126,19 @@
       box-shadow: 0 12px 28px rgba(0,0,0,.2);
     }
 
+    .balance-card::after {
+      content: "M";
+      position: absolute;
+      right: 20px;
+      bottom: -42px;
+      font-size: 170px;
+      font-weight: 900;
+      color: rgba(228,200,120,.06);
+      pointer-events: none;
+    }
+
     html[data-theme="light"] .balance-card {
-      background: linear-gradient(
-        135deg,
-        #f0dfb4,
-        #e3c77e
-      ) !important;
+      background: linear-gradient(135deg,#f0dfb4,#e3c77e) !important;
       color: #21190a !important;
     }
 
@@ -142,6 +147,7 @@
       font-size: 13px;
       font-weight: 600;
       margin: 0 0 12px;
+      letter-spacing: 1px;
     }
 
     .balance-amount {
@@ -149,6 +155,8 @@
       font-size: 34px;
       font-weight: 900;
       overflow-wrap: anywhere;
+      position: relative;
+      z-index: 1;
     }
 
     html[data-theme="light"] .balance-amount {
@@ -165,6 +173,8 @@
       color: var(--gold-light) !important;
       font-size: 12px;
       font-weight: 700;
+      position: relative;
+      z-index: 1;
     }
 
     html[data-theme="light"] .account-status {
@@ -197,7 +207,7 @@
 
     .quick-actions {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4,1fr);
       gap: 14px;
     }
 
@@ -241,7 +251,7 @@
 
     .service-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3,1fr);
       gap: 13px;
     }
 
@@ -285,26 +295,130 @@
       font-size: 22px;
     }
 
-    /* RECENT TRANSACTIONS */
+    /* NEW WALLET OVERVIEW */
 
-    .transactions-section {
-      background: var(--card-bg) !important;
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 20px;
+    .wallet-overview {
       margin-top: 30px;
+      padding: 22px;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      background: var(--card-bg);
+      box-shadow: 0 8px 25px rgba(0,0,0,.08);
     }
 
-    .view-all {
-      color: var(--gold) !important;
-      text-decoration: none;
-      font-weight: 700;
+    .overview-heading {
+      margin: 0 0 18px;
+    }
+
+    .overview-heading h2 {
+      margin: 0;
+      color: var(--gold);
+      font-size: 20px;
+    }
+
+    .overview-heading p {
+      margin: 6px 0 0;
+      color: var(--muted-color);
       font-size: 13px;
+    }
+
+    .overview-wallet {
+      padding: 20px;
+      border-radius: 16px;
+      background: linear-gradient(135deg,#292115,#15120d);
+      border: 1px solid var(--gold-dark);
+      color: #f4eee0;
+      margin-bottom: 20px;
+    }
+
+    html[data-theme="light"] .overview-wallet {
+      background: linear-gradient(135deg,#f0dfb4,#e3c77e);
+      color: #21190a;
+    }
+
+    .overview-wallet-label {
+      color: #c9b98f;
+      font-size: 12px;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+
+    html[data-theme="light"] .overview-wallet-label {
+      color: #684b16;
+    }
+
+    .overview-wallet-title {
+      margin-top: 10px;
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .overview-wallet-subtitle {
+      margin-top: 6px;
+      color: #b7ad98;
+      font-size: 12px;
+    }
+
+    html[data-theme="light"] .overview-wallet-subtitle {
+      color: #684b16;
+    }
+
+    .overview-divider {
+      height: 1px;
+      background: rgba(199,162,75,.3);
+      margin: 18px 0;
+    }
+
+    .overview-wallet-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: var(--gold-light);
+    }
+
+    html[data-theme="light"] .overview-wallet-footer {
+      color: #684b16;
+    }
+
+    /* ACTIVITY PANEL */
+
+    .activity-panel {
+      border: 1px solid var(--border-color);
+      border-radius: 15px;
+      padding: 17px;
+      background: var(--inner-bg);
+    }
+
+    .activity-panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .activity-panel-heading h3 {
+      color: var(--text-color);
+      font-size: 15px;
+      margin: 0;
+    }
+
+    .activity-label {
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .8px;
+    }
+
+    #recentTransactions {
+      color: var(--text-color);
     }
 
     .empty-transactions {
       text-align: center;
-      padding: 30px 10px;
+      padding: 25px 10px;
       color: var(--muted-color) !important;
     }
 
@@ -364,7 +478,7 @@
       background: #44351d;
     }
 
-    @media (max-width: 650px) {
+    @media (max-width:650px) {
       .dashboard-container {
         padding: 13px;
       }
@@ -379,11 +493,11 @@
       }
 
       .quick-actions {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2,1fr);
       }
 
       .service-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2,1fr);
         gap: 9px;
       }
 
@@ -400,9 +514,17 @@
       .balance-amount {
         font-size: 28px;
       }
+
+      .wallet-overview {
+        padding: 15px;
+      }
+
+      .overview-wallet {
+        padding: 17px;
+      }
     }
 
-    @media (max-width: 360px) {
+    @media (max-width:360px) {
       .service-grid {
         grid-template-columns: 1fr;
       }
@@ -418,13 +540,13 @@
 
   <main class="dashboard-container">
 
-    <!-- SIMPLE HEADER -->
+    <!-- HEADER -->
     <header class="dashboard-header">
       <h1 class="dashboard-logo">MYZEN MONEY</h1>
       <p class="dashboard-tagline">Your digital wallet</p>
     </header>
 
-    <!-- BALANCE -->
+    <!-- MAIN BALANCE -->
     <section class="balance-card">
       <h2>TOTAL WALLET BALANCE</h2>
 
@@ -521,24 +643,54 @@
       </div>
     </section>
 
-    <!-- RECENT TRANSACTIONS -->
-    <section class="transactions-section">
-      <div class="section-heading">
-        <div>
-          <h2>Recent Transactions</h2>
-          <p>Your latest wallet activities</p>
-        </div>
+    <!-- NEW WALLET OVERVIEW - REPLACES OLD RECENT TRANSACTIONS -->
+    <section class="wallet-overview">
 
-        <a href="history.html" class="view-all">View All</a>
+      <div class="overview-heading">
+        <h2>Wallet Overview</h2>
+        <p>Your MYZEN MONEY account activity</p>
       </div>
 
-      <div id="recentTransactions">
-        <div class="empty-transactions">
-          <div class="empty-icon">↔</div>
-          <h3>No transactions yet</h3>
-          <p>Your recent transactions will appear here.</p>
+      <div class="overview-wallet">
+
+        <div class="overview-wallet-label">
+          MYZEN MONEY WALLET
         </div>
+
+        <div class="overview-wallet-title">
+          Your Wallet
+        </div>
+
+        <div class="overview-wallet-subtitle">
+          Secure digital wallet account
+        </div>
+
+        <div class="overview-divider"></div>
+
+        <div class="overview-wallet-footer">
+          <span>● Wallet Account</span>
+          <span>MYZEN MONEY</span>
+        </div>
+
       </div>
+
+      <div class="activity-panel">
+
+        <div class="activity-panel-heading">
+          <h3>Latest Activity</h3>
+          <span class="activity-label">ACTIVITY</span>
+        </div>
+
+        <div id="recentTransactions">
+          <div class="empty-transactions">
+            <div class="empty-icon">↔</div>
+            <h3>No transactions yet</h3>
+            <p>Your wallet activities will appear here.</p>
+          </div>
+        </div>
+
+      </div>
+
     </section>
 
     <div id="dashboardMessage" class="dashboard-message"></div>
@@ -561,7 +713,7 @@
 
   </main>
 
-  <script type="module" src="js/dashboard.js?v=20261126"></script>
+  <script type="module" src="js/dashboard.js?v=20261127"></script>
 
 </body>
 </html>

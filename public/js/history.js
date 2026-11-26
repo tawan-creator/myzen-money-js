@@ -146,10 +146,94 @@ function createElement(tag, className, text) {
   return element;
 }
 
-function getStatus(tx) {
-  return String(tx.status || "completed")
+// ==========================================
+// ADMIN STATUS
+// Approved = Complete
+// Rejected = Reject
+// Pending = Pending
+// ==========================================
+
+function normalizeStatus(value) {
+  return String(value || "")
     .toLowerCase()
-    .replace(/_/g, " ");
+    .trim()
+    .replace(/[\s-]+/g, "_");
+}
+
+function getStatus(tx) {
+  // Prefer explicit admin approval fields.
+  const adminStatus =
+    tx.adminStatus ??
+    tx.admin_status ??
+    tx.adminApprovalStatus ??
+    tx.admin_approval_status ??
+    tx.approvalStatus ??
+    tx.approval_status ??
+    tx.reviewStatus ??
+    tx.review_status;
+
+  const rawStatus = normalizeStatus(
+    adminStatus || tx.status || "pending"
+  );
+
+  const approvedStatuses = [
+    "approved",
+    "admin_approved",
+    "complete",
+    "completed",
+    "success",
+    "successful"
+  ];
+
+  const rejectedStatuses = [
+    "reject",
+    "rejected",
+    "admin_rejected",
+    "declined",
+    "denied"
+  ];
+
+  const pendingStatuses = [
+    "pending",
+    "processing",
+    "waiting",
+    "under_review",
+    "submitted"
+  ];
+
+  if (approvedStatuses.includes(rawStatus)) {
+    return "Complete";
+  }
+
+  if (rejectedStatuses.includes(rawStatus)) {
+    return "Reject";
+  }
+
+  if (pendingStatuses.includes(rawStatus)) {
+    return "Pending";
+  }
+
+  return rawStatus
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function getStatusClass(status) {
+  const normalized = normalizeStatus(status);
+
+  if (normalized === "complete" || normalized === "completed") {
+    return "completed";
+  }
+
+  if (normalized === "reject" || normalized === "rejected") {
+    return "rejected";
+  }
+
+  if (normalized === "pending") {
+    return "pending";
+  }
+
+  return normalized || "pending";
 }
 
 function getReference(tx) {
@@ -207,6 +291,10 @@ function getFirstValue(tx, keys) {
 
   return "";
 }
+
+// ==========================================
+// RECEIPT CSS
+// ==========================================
 
 function addReceiptStyles() {
   if ($("myzenReceiptStyles")) return;
@@ -282,19 +370,22 @@ function addReceiptStyles() {
       text-transform: uppercase;
     }
 
-    .myzen-receipt-status.completed,
-    .myzen-receipt-status.approved {
+    .myzen-receipt-status.completed {
       color: #9ee3b5;
       background: #183426;
       border-color: #34764c;
     }
 
-    .myzen-receipt-status.rejected,
-    .myzen-receipt-status.failed,
-    .myzen-receipt-status.cancelled {
+    .myzen-receipt-status.rejected {
       color: #ffaaaa;
       background: #3a1b1b;
       border-color: #8b4242;
+    }
+
+    .myzen-receipt-status.pending {
+      color: #e2c16f;
+      background: #3b301a;
+      border-color: #98752e;
     }
 
     .myzen-receipt-body {
@@ -472,6 +563,10 @@ function closeReceipt() {
   document.body.style.overflow = "";
 }
 
+// ==========================================
+// OPEN RECEIPT
+// ==========================================
+
 function openReceipt(tx) {
   addReceiptStyles();
   closeReceipt();
@@ -511,11 +606,12 @@ function openReceipt(tx) {
   );
 
   const status = getStatus(tx);
+  const statusClass = getStatusClass(status);
 
   header.appendChild(
     createElement(
       "span",
-      "myzen-receipt-status " + status.replace(/\s/g, "-"),
+      "myzen-receipt-status " + statusClass,
       status
     )
   );
@@ -746,6 +842,10 @@ function openReceipt(tx) {
   document.body.style.overflow = "hidden";
 }
 
+// ==========================================
+// RENDER TRANSACTIONS
+// ==========================================
+
 function renderTransactions() {
   if (!els.list || !els.total || !els.message) return;
 
@@ -799,10 +899,11 @@ function renderTransactions() {
     );
 
     const status = getStatus(tx);
+    const statusClass = getStatusClass(status);
 
     const statusElement = createElement(
       "span",
-      "status " + status.replace(/\s/g, "-"),
+      "status " + statusClass,
       status
     );
 
@@ -839,6 +940,10 @@ function renderTransactions() {
     els.list.appendChild(transaction);
   });
 }
+
+// ==========================================
+// LOAD HISTORY FROM BACKEND
+// ==========================================
 
 async function loadHistory(user) {
   try {
@@ -888,6 +993,10 @@ async function loadHistory(user) {
   }
 }
 
+// ==========================================
+// FILTER BUTTONS
+// ==========================================
+
 els.filters.forEach((button) => {
   button.addEventListener("click", () => {
     els.filters.forEach((item) => {
@@ -902,11 +1011,19 @@ els.filters.forEach((button) => {
   });
 });
 
+// ==========================================
+// CLOSE RECEIPT WITH ESCAPE
+// ==========================================
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     closeReceipt();
   }
 });
+
+// ==========================================
+// FIREBASE AUTH
+// ==========================================
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
