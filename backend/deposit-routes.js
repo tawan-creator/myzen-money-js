@@ -642,7 +642,6 @@ function createDepositRoutes({
 
         const deposit = snap.data();
 
-        // Only the owner can view this deposit slip.
         if (deposit.uid !== req.user.uid) {
           return error(res, 403, "You cannot view this deposit slip.");
         }
@@ -1012,8 +1011,6 @@ function createDepositRoutes({
 
   // ==========================================
   // ADMIN PAYMENT METHOD CONFIGURATION
-  // GET /api/admin/deposit/methods
-  // PUT /api/admin/deposit/methods
   // ==========================================
 
   router.get(
@@ -1104,7 +1101,6 @@ function createDepositRoutes({
 
           ids.add(id);
 
-          // Preserve existing QR when editing payment method details.
           const oldMethod = oldMethods.find(m => m.id === id);
 
           clean.push({
@@ -1143,8 +1139,6 @@ function createDepositRoutes({
 
   // ==========================================
   // ADMIN UPLOAD / REPLACE PAYMENT QR
-  // POST /api/admin/deposit/methods/:id/qr
-  // multipart/form-data field: qr
   // ==========================================
 
   router.post(
@@ -1216,7 +1210,6 @@ function createDepositRoutes({
 
   // ==========================================
   // ADMIN EXCHANGE RATE MANAGEMENT
-  // GET /api/admin/exchange-rates
   // ==========================================
 
   router.get(
@@ -1249,7 +1242,6 @@ function createDepositRoutes({
 
   // ==========================================
   // ADMIN SAVE EXCHANGE RATES
-  // PUT /api/admin/exchange-rates
   // ==========================================
 
   router.put(
@@ -1395,7 +1387,6 @@ function createDepositRoutes({
           .doc(`international_${idempotencyKey}_DEBIT`);
 
         const result = await db.runTransaction(async transaction => {
-          // Read all documents before writing.
           const requestSnap = await transaction.get(requestRef);
 
           if (requestSnap.exists) {
@@ -1514,13 +1505,11 @@ function createDepositRoutes({
             user.name || user.fullName || ""
           ).trim().slice(0, 150);
 
-          // Debit wallet.
           transaction.update(userRef, {
             balance: balanceAfter,
             updatedAt: FieldValue.serverTimestamp()
           });
 
-          // Create transfer request.
           transaction.create(requestRef, {
             senderUid: req.user.uid,
             senderName,
@@ -1544,7 +1533,10 @@ function createDepositRoutes({
             updatedAt: FieldValue.serverTimestamp()
           });
 
-          // Create debit ledger.
+          // IMPORTANT:
+          // The transfer is not approved yet.
+          // Keep debit ledger status pending until admin review.
+
           transaction.create(debitLedgerRef, {
             ledgerId: `international_${idempotencyKey}_DEBIT`,
             uid: req.user.uid,
@@ -1555,7 +1547,7 @@ function createDepositRoutes({
             balanceBefore,
             balanceAfter,
             referenceId: idempotencyKey,
-            status: "completed",
+            status: "pending",
             createdAt: FieldValue.serverTimestamp()
           });
 
@@ -1686,8 +1678,13 @@ function createDepositRoutes({
           .collection("internationalTransfers")
           .doc(id);
 
+        const debitLedgerRef = db
+          .collection("walletLedger")
+          .doc(`international_${id}_DEBIT`);
+
         const result = await db.runTransaction(async transaction => {
           const snap = await transaction.get(requestRef);
+          const ledgerSnap = await transaction.get(debitLedgerRef);
 
           if (!snap.exists) {
             throw new Error("TRANSFER_NOT_FOUND");
@@ -1696,6 +1693,16 @@ function createDepositRoutes({
           const transfer = snap.data();
 
           if (transfer.status === "approved") {
+            // Repair the ledger status for an already-approved transfer.
+            if (ledgerSnap.exists) {
+              transaction.update(debitLedgerRef, {
+                status: "approved",
+                reviewedBy: req.user.uid,
+                reviewedAt: FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp()
+              });
+            }
+
             return { alreadyProcessed: true };
           }
 
@@ -1709,6 +1716,15 @@ function createDepositRoutes({
             reviewedAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp()
           });
+
+          if (ledgerSnap.exists) {
+            transaction.update(debitLedgerRef, {
+              status: "approved",
+              reviewedBy: req.user.uid,
+              reviewedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp()
+            });
+          }
 
           return { alreadyProcessed: false };
         });
@@ -1763,6 +1779,16 @@ function createDepositRoutes({
           .collection("internationalTransfers")
           .doc(id);
 
+        const userRefPlaceholder = null;
+
+        const debitLedgerRef = db
+          .collection("walletLedger")
+          .doc(`international_${id}_DEBIT`);
+
+        const refundLedgerRef = db
+          .collection("walletLedger")
+          .doc(`international_${id}_REFUND`);
+
         const result = await db.runTransaction(async transaction => {
           const requestSnap = await transaction.get(requestRef);
 
@@ -1772,7 +1798,21 @@ function createDepositRoutes({
 
           const transfer = requestSnap.data();
 
+          // Read debit ledger before any transaction writes.
+          const debitLedgerSnap = await transaction.get(debitLedgerRef);
+
           if (transfer.status === "rejected") {
+            // Repair old rejected transfers if their debit ledger
+            // still contains the previous completed status.
+            if (debitLedgerSnap.exists) {
+              transaction.update(debitLedgerRef, {
+                status: "rejected",
+                reviewedBy: req.user.uid,
+                reviewedAt: FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp()
+              });
+            }
+
             return { alreadyProcessed: true };
           }
 
@@ -1783,10 +1823,6 @@ function createDepositRoutes({
           const userRef = db
             .collection("users")
             .doc(transfer.senderUid);
-
-          const refundLedgerRef = db
-            .collection("walletLedger")
-            .doc(`international_${id}_REFUND`);
 
           const userSnap = await transaction.get(userRef);
           const refundLedgerSnap = await transaction.get(refundLedgerRef);
@@ -1855,7 +1891,7 @@ function createDepositRoutes({
             updatedAt: FieldValue.serverTimestamp()
           });
 
-          // Mark request rejected.
+          // Mark original transfer rejected.
           transaction.update(requestRef, {
             status: "rejected",
             rejectionReason: reason,
@@ -1866,7 +1902,17 @@ function createDepositRoutes({
             refundedCurrency: currency
           });
 
-          // Refund ledger.
+          // Update original debit ledger to rejected.
+          if (debitLedgerSnap.exists) {
+            transaction.update(debitLedgerRef, {
+              status: "rejected",
+              reviewedBy: req.user.uid,
+              reviewedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp()
+            });
+          }
+
+          // Refund ledger is completed because the refund was processed.
           transaction.create(refundLedgerRef, {
             ledgerId: `international_${id}_REFUND`,
             uid: transfer.senderUid,
