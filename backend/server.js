@@ -4,6 +4,7 @@
 // ==========================================
 // MYZEN MONEY - PRODUCTION WALLET BACKEND
 // Wallet Transfers + Deposits + Admin Users
+// Transaction History API
 // Firebase Admin SDK v14
 // ==========================================
 
@@ -1092,6 +1093,254 @@ app.use(
 );
 
 // ==========================================
+// DATE HELPER FOR HISTORY
+// ==========================================
+
+function historyDateToISO(value) {
+  if (!value) return null;
+
+  if (typeof value.toDate === "function") {
+    return value.toDate().toISOString();
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (typeof value.seconds === "number") {
+    return new Date(
+      value.seconds * 1000
+    ).toISOString();
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return null;
+}
+
+// ==========================================
+// USER TRANSACTION HISTORY
+// GET /api/history/my
+// ==========================================
+
+app.get(
+  "/api/history/my",
+  requireAuth,
+  async (req, res) => {
+    try {
+      const uid = req.user.uid;
+
+      const [
+        ledgerSnap,
+        depositSnap,
+        internationalSnap
+      ] = await Promise.all([
+        db.collection("walletLedger")
+          .where("uid", "==", uid)
+          .limit(200)
+          .get(),
+
+        db.collection("depositRequests")
+          .where("uid", "==", uid)
+          .limit(100)
+          .get(),
+
+        db.collection("internationalTransfers")
+          .where("senderUid", "==", uid)
+          .limit(100)
+          .get()
+      ]);
+
+      const transactions = [];
+
+      const depositLedgerReferences = new Set();
+      const internationalLedgerReferences = new Set();
+
+      // --------------------------------------
+      // WALLET LEDGER
+      // Deposit / Send / Receive / Refund
+      // --------------------------------------
+
+      ledgerSnap.forEach((doc) => {
+        const data = doc.data();
+
+        const referenceId =
+          data.referenceId ||
+          data.transferId ||
+          "";
+
+        let type = data.type || "";
+
+        // Wallet transfer ledger entries
+        if (!type && data.transferId) {
+          type = "wallet_transfer";
+        }
+
+        if (!type) {
+          type = "transaction";
+        }
+
+        if (type === "deposit") {
+          if (referenceId) {
+            depositLedgerReferences.add(referenceId);
+          }
+        }
+
+        if (
+          type.includes("international") ||
+          doc.id.startsWith("international_")
+        ) {
+          if (referenceId) {
+            internationalLedgerReferences.add(referenceId);
+          }
+
+          if (data.transferId) {
+            internationalLedgerReferences.add(
+              data.transferId
+            );
+          }
+
+          const internationalId = doc.id
+            .replace(/^international_/, "")
+            .replace(/_(DEBIT|REFUND)$/, "");
+
+          if (internationalId !== doc.id) {
+            internationalLedgerReferences.add(
+              internationalId
+            );
+          }
+        }
+
+        transactions.push({
+          id: doc.id,
+          referenceId,
+
+          type,
+
+          direction: data.direction || "",
+
+          amount: Number(data.amount || 0),
+          currency: data.currency || "",
+
+          balanceBefore:
+            data.balanceBefore ?? null,
+
+          balanceAfter:
+            data.balanceAfter ?? null,
+
+          status: data.status || "completed",
+
+          counterpartyUid:
+            data.counterpartyUid || "",
+
+          createdAt: historyDateToISO(
+            data.createdAt
+          )
+        });
+      });
+
+      // --------------------------------------
+      // DEPOSIT REQUESTS
+      // Include pending deposits without ledger
+      // --------------------------------------
+
+      depositSnap.forEach((doc) => {
+        if (depositLedgerReferences.has(doc.id)) {
+          return;
+        }
+
+        const data = doc.data();
+
+        transactions.push({
+          id: doc.id,
+          referenceId: doc.id,
+
+          type: "deposit",
+          direction: "credit",
+
+          amount: Number(data.amount || 0),
+          currency: data.currency || "",
+
+          status: data.status || "pending",
+
+          methodName: data.methodName || "",
+
+          createdAt: historyDateToISO(
+            data.createdAt
+          )
+        });
+      });
+
+      // --------------------------------------
+      // INTERNATIONAL TRANSFERS
+      // Include pending transfers without ledger
+      // --------------------------------------
+
+      internationalSnap.forEach((doc) => {
+        if (internationalLedgerReferences.has(doc.id)) {
+          return;
+        }
+
+        const data = doc.data();
+
+        transactions.push({
+          id: doc.id,
+          referenceId: doc.id,
+
+          type: "international_transfer",
+          direction: "debit",
+
+          amount: Number(data.sendAmount || 0),
+          currency: data.sendCurrency || "",
+
+          status: data.status || "pending",
+
+          createdAt: historyDateToISO(
+            data.createdAt
+          )
+        });
+      });
+
+      // --------------------------------------
+      // SORT NEWEST FIRST
+      // --------------------------------------
+
+      transactions.sort((a, b) => {
+        const dateA = a.createdAt
+          ? new Date(a.createdAt).getTime()
+          : 0;
+
+        const dateB = b.createdAt
+          ? new Date(b.createdAt).getTime()
+          : 0;
+
+        return dateB - dateA;
+      });
+
+      return res.json({
+        success: true,
+        count: transactions.length,
+        transactions
+      });
+
+    } catch (error) {
+      console.error(
+        "MYZEN HISTORY API ERROR:",
+        error
+      );
+
+      return sendError(
+        res,
+        500,
+        "Unable to load transaction history."
+      );
+    }
+  }
+);
+
+// ==========================================
 // ADMIN USER MANAGEMENT
 // GET /api/admin/users
 // ==========================================
@@ -1363,6 +1612,7 @@ app.listen(PORT, () => {
   console.log("PORT:", PORT);
   console.log("TRANSFER MODE: WALLET_TO_WALLET");
   console.log("DEPOSIT API: ENABLED");
+  console.log("HISTORY API: ENABLED");
   console.log("ADMIN USER MANAGEMENT: ENABLED");
   console.log("ADMIN USER APPROVAL: ENABLED");
   console.log("--------------------------------");

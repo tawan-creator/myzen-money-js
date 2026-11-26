@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>MYZEN MONEY - Transaction History</title>
+
+  <link rel="icon" href="favicon.png">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f4f7fb;
+      font-family: Arial, sans-serif;
+      color: #172033;
+    }
+
+    .header {
+      background: #1769e0;
+      color: white;
+      padding: 20px;
+    }
+
+    .header-content {
+      max-width: 650px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .back {
+      color: white;
+      text-decoration: none;
+      font-size: 25px;
+    }
+
+    .header h2 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .container {
+      max-width: 650px;
+      margin: 20px auto;
+      padding: 0 15px 30px;
+    }
+
+    .summary {
+      background: white;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.05);
+    }
+
+    .summary small {
+      color: #718096;
+    }
+
+    .summary h2 {
+      margin: 8px 0 0;
+      color: #1769e0;
+      font-size: 25px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+    }
+
+    .filter {
+      border: 1px solid #dce4ef;
+      background: white;
+      color: #536174;
+      border-radius: 20px;
+      padding: 9px 15px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .filter.active {
+      background: #1769e0;
+      color: white;
+      border-color: #1769e0;
+    }
+
+    .transaction {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      padding: 15px;
+      border-radius: 13px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+
+    .tx-icon {
+      width: 43px;
+      height: 43px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      background: #eaf2ff;
+      flex-shrink: 0;
+    }
+
+    .tx-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tx-info strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .tx-info small {
+      color: #8994a5;
+      font-size: 12px;
+    }
+
+    .tx-amount {
+      text-align: right;
+      font-weight: bold;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .credit {
+      color: #16a36a;
+    }
+
+    .debit {
+      color: #e04b4b;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 5px;
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 10px;
+      background: #fff4d8;
+      color: #a66b00;
+    }
+
+    .status.completed,
+    .status.approved {
+      background: #e3f8ed;
+      color: #168653;
+    }
+
+    .status.rejected,
+    .status.failed {
+      background: #ffe8e8;
+      color: #c63838;
+    }
+
+    .message {
+      text-align: center;
+      color: #8994a5;
+      padding: 35px 15px;
+      background: white;
+      border-radius: 13px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px;
+      color: #718096;
+    }
+
+    @media (max-width: 400px) {
+      .tx-info strong {
+        font-size: 13px;
+      }
+
+      .tx-amount {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header class="header">
+    <div class="header-content">
+      <a class="back" href="dashboard.html">‹</a>
+      <h2>Transaction History</h2>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="summary">
+      <small>Total Transactions</small>
+      <h2 id="totalTransactions">0</h2>
+    </section>
+
+    <div class="filters">
+      <button class="filter active" data-filter="all">All</button>
+      <button class="filter" data-filter="deposit">Deposit</button>
+      <button class="filter" data-filter="send">Send</button>
+      <button class="filter" data-filter="receive">Receive</button>
+      <button class="filter" data-filter="international_transfer">
+        International
+      </button>
+      <button class="filter" data-filter="refund">Refund</button>
+    </div>
+
+    <div id="historyMessage" class="loading">
+      Loading transactions...
+    </div>
+
+    <div id="transactionList"></div>
+
+  </main>
+
+  <script type="module" src="js/history.js?v=20261126-2"></script>
+
+</body>
+</html>
