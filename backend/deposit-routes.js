@@ -613,6 +613,80 @@ function createDepositRoutes({
   );
 
   // ==========================================
+  // MY PRIVATE DEPOSIT PROOF
+  // GET /api/deposits/my/:id/proof
+  // ==========================================
+
+  router.get(
+    "/deposits/my/:id/proof",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const depositId = String(req.params.id || "").trim();
+
+        if (
+          !depositId ||
+          !/^[A-Za-z0-9_-]{1,150}$/.test(depositId)
+        ) {
+          return error(res, 400, "Invalid deposit request ID.");
+        }
+
+        const snap = await db
+          .collection("depositRequests")
+          .doc(depositId)
+          .get();
+
+        if (!snap.exists) {
+          return error(res, 404, "Deposit request not found.");
+        }
+
+        const deposit = snap.data();
+
+        // Only the owner can view this deposit slip.
+        if (deposit.uid !== req.user.uid) {
+          return error(res, 403, "You cannot view this deposit slip.");
+        }
+
+        const proof = deposit.proof;
+
+        if (
+          !proof ||
+          !proof.publicId ||
+          !proof.format ||
+          proof.assetType !== "authenticated"
+        ) {
+          return error(res, 404, "Deposit screenshot not found.");
+        }
+
+        const url = cloudinary.utils.private_download_url(
+          proof.publicId,
+          proof.format,
+          {
+            resource_type: "image",
+            type: "authenticated",
+            expires_at: Math.floor(Date.now() / 1000) + 300
+          }
+        );
+
+        return res.json({
+          success: true,
+          depositId,
+          url,
+          expiresInSeconds: 300
+        });
+
+      } catch (err) {
+        console.error("MY DEPOSIT PROOF:", err);
+        return error(
+          res,
+          500,
+          "Unable to retrieve your deposit screenshot."
+        );
+      }
+    }
+  );
+
+  // ==========================================
   // ADMIN DEPOSIT LIST
   // GET /api/admin/deposits
   // ==========================================
@@ -1604,9 +1678,9 @@ function createDepositRoutes({
       try {
         const id = String(req.params.id || "");
 
-          if (!/^[A-Za-z0-9_-]{1,150}$/.test(id)) {
-       return error(res, 400, "Invalid transfer ID.");
-       }
+        if (!/^[A-Za-z0-9_-]{1,150}$/.test(id)) {
+          return error(res, 400, "Invalid transfer ID.");
+        }
 
         const requestRef = db
           .collection("internationalTransfers")
@@ -1677,9 +1751,9 @@ function createDepositRoutes({
       try {
         const id = String(req.params.id || "");
 
-      if (!/^[A-Za-z0-9_-]{1,150}$/.test(id)) {
-  return error(res, 400, "Invalid transfer ID.");
-}
+        if (!/^[A-Za-z0-9_-]{1,150}$/.test(id)) {
+          return error(res, 400, "Invalid transfer ID.");
+        }
 
         const reason = String(
           req.body?.reason || "Rejected by administrator"
