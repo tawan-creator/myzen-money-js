@@ -164,10 +164,6 @@ function createElement(tag, className, text) {
 
 // ==========================================
 // ADMIN STATUS
-// International Transfer + Other History
-// Approved = Complete
-// Rejected = Reject
-// Pending = Pending
 // ==========================================
 
 function normalizeStatus(value) {
@@ -178,6 +174,16 @@ function normalizeStatus(value) {
 }
 
 function getStatus(tx) {
+  const type = String(tx.type || "").toLowerCase();
+
+  // International refund is created only after
+  // the administrator rejects the transfer.
+  // The wallet refund itself is completed,
+  // but the original transfer decision is Reject.
+  if (type === "international_transfer_refund") {
+    return "Reject";
+  }
+
   const adminStatus =
     tx.adminStatus ??
     tx.admin_status ??

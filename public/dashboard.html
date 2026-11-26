@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b0b0b">
-
   <title>MYZEN MONEY - Dashboard</title>
 
   <link rel="stylesheet" href="css/style.css">
@@ -15,29 +14,19 @@
   <script>
     (() => {
       try {
-        const settings = JSON.parse(
-          localStorage.getItem("myzen_settings") || "{}"
-        );
-
-        const theme =
-          settings.theme ||
-          localStorage.getItem("myzen_theme") ||
-          "dark";
-
+        const settings = JSON.parse(localStorage.getItem("myzen_settings") || "{}");
+        const theme = settings.theme || localStorage.getItem("myzen_theme") || "dark";
         const valid = theme === "light" ? "light" : "dark";
-
         document.documentElement.dataset.theme = valid;
         document.documentElement.style.colorScheme = valid;
-      } catch (error) {
+      } catch {
         document.documentElement.dataset.theme = "dark";
       }
     })();
   </script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     :root {
       --gold: #c7a24b;
@@ -82,8 +71,6 @@
       padding: 20px;
     }
 
-    /* HEADER */
-
     .dashboard-header {
       display: flex;
       flex-direction: column;
@@ -108,11 +95,8 @@
     .dashboard-tagline {
       color: var(--muted-color) !important;
       font-size: 13px;
-      letter-spacing: .5px;
       margin: 0;
     }
-
-    /* MAIN WALLET BALANCE */
 
     .balance-card {
       position: relative;
@@ -145,7 +129,6 @@
     .balance-card h2 {
       color: inherit !important;
       font-size: 13px;
-      font-weight: 600;
       margin: 0 0 12px;
       letter-spacing: 1px;
     }
@@ -181,8 +164,6 @@
       color: #684b16 !important;
     }
 
-    /* SECTION HEADINGS */
-
     .section-heading {
       display: flex;
       justify-content: space-between;
@@ -202,8 +183,6 @@
       font-size: 13px;
       margin: 5px 0 0;
     }
-
-    /* QUICK ACTIONS */
 
     .quick-actions {
       display: grid;
@@ -235,7 +214,7 @@
       box-shadow: 0 8px 20px rgba(199,162,75,.12);
     }
 
-    .quick-icon {
+    .quick-icon, .service-icon {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -245,9 +224,8 @@
       font-size: 21px;
       background: #302616 !important;
       color: var(--gold-light) !important;
+      flex-shrink: 0;
     }
-
-    /* MONEY SERVICES */
 
     .service-grid {
       display: grid;
@@ -273,20 +251,6 @@
     .menu-item:hover {
       border-color: var(--gold);
       transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(199,162,75,.1);
-    }
-
-    .service-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      font-size: 20px;
-      background: #302616 !important;
-      color: var(--gold-light) !important;
     }
 
     .service-arrow {
@@ -294,8 +258,6 @@
       color: var(--gold) !important;
       font-size: 22px;
     }
-
-    /* NEW WALLET OVERVIEW */
 
     .wallet-overview {
       margin-top: 30px;
@@ -306,9 +268,7 @@
       box-shadow: 0 8px 25px rgba(0,0,0,.08);
     }
 
-    .overview-heading {
-      margin: 0 0 18px;
-    }
+    .overview-heading { margin: 0 0 18px; }
 
     .overview-heading h2 {
       margin: 0;
@@ -343,9 +303,7 @@
       font-weight: 700;
     }
 
-    html[data-theme="light"] .overview-wallet-label {
-      color: #684b16;
-    }
+    html[data-theme="light"] .overview-wallet-label { color: #684b16; }
 
     .overview-wallet-title {
       margin-top: 10px;
@@ -359,9 +317,7 @@
       font-size: 12px;
     }
 
-    html[data-theme="light"] .overview-wallet-subtitle {
-      color: #684b16;
-    }
+    html[data-theme="light"] .overview-wallet-subtitle { color: #684b16; }
 
     .overview-divider {
       height: 1px;
@@ -378,11 +334,7 @@
       color: var(--gold-light);
     }
 
-    html[data-theme="light"] .overview-wallet-footer {
-      color: #684b16;
-    }
-
-    /* ACTIVITY PANEL */
+    html[data-theme="light"] .overview-wallet-footer { color: #684b16; }
 
     .activity-panel {
       border: 1px solid var(--border-color);
@@ -396,7 +348,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 15px;
+      margin-bottom: 18px;
     }
 
     .activity-panel-heading h3 {
@@ -412,8 +364,170 @@
       letter-spacing: .8px;
     }
 
-    #recentTransactions {
+    .activity-summary {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .activity-stat {
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 13px;
+      background: var(--card-bg);
+    }
+
+    .activity-stat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .activity-stat-name {
       color: var(--text-color);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .activity-stat-percent {
+      color: var(--gold);
+      font-size: 15px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .activity-stat-amount {
+      color: var(--text-color);
+      font-size: 17px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+      margin-bottom: 11px;
+    }
+
+    .activity-progress {
+      height: 7px;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 20px;
+      background: rgba(150,130,90,.18);
+    }
+
+    .activity-progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg,var(--gold-dark),var(--gold-light));
+      transition: width .5s ease;
+    }
+
+    .activity-total {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 13px 14px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(199,162,75,.3);
+      border-radius: 12px;
+      background: rgba(199,162,75,.08);
+      font-size: 12px;
+      color: var(--muted-color);
+    }
+
+    .activity-total strong {
+      color: var(--gold);
+      font-size: 14px;
+    }
+
+    .activity-list-heading {
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .7px;
+      margin: 18px 0 10px;
+    }
+
+    .transaction-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .transaction-row:last-child { border-bottom: 0; }
+
+    .transaction-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: rgba(199,162,75,.13);
+      color: var(--gold);
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .transaction-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .transaction-title {
+      color: var(--text-color);
+      font-size: 13px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .transaction-date {
+      color: var(--muted-color);
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .transaction-right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .transaction-amount {
+      color: var(--text-color);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .transaction-status {
+      display: inline-block;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      background: rgba(150,150,150,.12);
+      color: var(--muted-color);
+    }
+
+    .transaction-status.complete {
+      color: #16a34a;
+      background: rgba(22,163,74,.12);
+    }
+
+    .transaction-status.reject {
+      color: #dc2626;
+      background: rgba(220,38,38,.12);
+    }
+
+    .transaction-status.pending {
+      color: #d97706;
+      background: rgba(217,119,6,.12);
     }
 
     .empty-transactions {
@@ -446,8 +560,6 @@
       text-align: center;
     }
 
-    /* FOOTER */
-
     .dashboard-footer {
       text-align: center;
       padding: 30px 10px 15px;
@@ -474,92 +586,47 @@
       cursor: pointer;
     }
 
-    .footer-logout:hover {
-      background: #44351d;
-    }
+    .footer-logout:hover { background: #44351d; }
 
     @media (max-width:650px) {
-      .dashboard-container {
-        padding: 13px;
-      }
-
-      .dashboard-header {
-        padding: 19px;
-        margin-bottom: 22px;
-      }
-
-      .dashboard-logo {
-        font-size: 23px;
-      }
-
-      .quick-actions {
-        grid-template-columns: repeat(2,1fr);
-      }
-
-      .service-grid {
-        grid-template-columns: repeat(2,1fr);
-        gap: 9px;
-      }
-
-      .menu-item {
-        padding: 10px;
-        font-size: 13px;
-      }
-
-      .service-icon {
-        width: 36px;
-        height: 36px;
-      }
-
-      .balance-amount {
-        font-size: 28px;
-      }
-
-      .wallet-overview {
-        padding: 15px;
-      }
-
-      .overview-wallet {
-        padding: 17px;
-      }
+      .dashboard-container { padding: 13px; }
+      .dashboard-header { padding: 19px; margin-bottom: 22px; }
+      .dashboard-logo { font-size: 23px; }
+      .quick-actions { grid-template-columns: repeat(2,1fr); }
+      .service-grid { grid-template-columns: repeat(2,1fr); gap: 9px; }
+      .menu-item { padding: 10px; font-size: 13px; }
+      .service-icon { width: 36px; height: 36px; }
+      .balance-amount { font-size: 28px; }
+      .wallet-overview { padding: 15px; }
+      .overview-wallet { padding: 17px; }
+      .activity-panel { padding: 12px; }
+      .activity-stat { padding: 12px; }
+      .activity-stat-amount { font-size: 14px; }
     }
 
     @media (max-width:360px) {
-      .service-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .dashboard-logo {
-        font-size: 21px;
-      }
+      .service-grid { grid-template-columns: 1fr; }
+      .dashboard-logo { font-size: 21px; }
+      .activity-summary { grid-template-columns: 1fr; }
+      .transaction-amount { font-size: 11px; }
     }
   </style>
 </head>
 
 <body class="dashboard-page">
-
   <main class="dashboard-container">
 
-    <!-- HEADER -->
     <header class="dashboard-header">
       <h1 class="dashboard-logo">MYZEN MONEY</h1>
       <p class="dashboard-tagline">Your digital wallet</p>
     </header>
 
-    <!-- MAIN BALANCE -->
     <section class="balance-card">
       <h2>TOTAL WALLET BALANCE</h2>
-
-      <div class="balance-amount" id="balance">
-        Loading...
-      </div>
-
-      <div class="account-status" id="accountStatus">
-        Loading account...
-      </div>
+      <div class="balance-amount" id="balance">Loading...</div>
+      <div class="account-status" id="accountStatus">Loading account...</div>
     </section>
 
-    <!-- QUICK ACTIONS -->
     <section>
       <div class="section-heading">
         <div>
@@ -569,7 +636,6 @@
       </div>
 
       <div class="quick-actions">
-
         <a href="international-transfer.html" class="quick-action">
           <span class="quick-icon">⇄</span>
           <span>International Transfer</span>
@@ -589,11 +655,9 @@
           <span class="quick-icon">↓</span>
           <span>Receive</span>
         </a>
-
       </div>
     </section>
 
-    <!-- MONEY SERVICES -->
     <section>
       <div class="section-heading">
         <div>
@@ -603,7 +667,6 @@
       </div>
 
       <div class="service-grid">
-
         <a href="deposit.html" class="menu-item">
           <span class="service-icon">＋</span>
           <span>Deposit</span>
@@ -639,43 +702,27 @@
           <span>Settings</span>
           <span class="service-arrow">›</span>
         </a>
-
       </div>
     </section>
 
-    <!-- NEW WALLET OVERVIEW - REPLACES OLD RECENT TRANSACTIONS -->
     <section class="wallet-overview">
-
       <div class="overview-heading">
         <h2>Wallet Overview</h2>
         <p>Your MYZEN MONEY account activity</p>
       </div>
 
       <div class="overview-wallet">
-
-        <div class="overview-wallet-label">
-          MYZEN MONEY WALLET
-        </div>
-
-        <div class="overview-wallet-title">
-          Your Wallet
-        </div>
-
-        <div class="overview-wallet-subtitle">
-          Secure digital wallet account
-        </div>
-
+        <div class="overview-wallet-label">MYZEN MONEY WALLET</div>
+        <div class="overview-wallet-title">Your Wallet</div>
+        <div class="overview-wallet-subtitle">Secure digital wallet account</div>
         <div class="overview-divider"></div>
-
         <div class="overview-wallet-footer">
           <span>● Wallet Account</span>
           <span>MYZEN MONEY</span>
         </div>
-
       </div>
 
       <div class="activity-panel">
-
         <div class="activity-panel-heading">
           <h3>Latest Activity</h3>
           <span class="activity-label">ACTIVITY</span>
@@ -684,36 +731,28 @@
         <div id="recentTransactions">
           <div class="empty-transactions">
             <div class="empty-icon">↔</div>
-            <h3>No transactions yet</h3>
-            <p>Your wallet activities will appear here.</p>
+            <h3>Loading activity...</h3>
+            <p>Please wait while we load your transactions.</p>
           </div>
         </div>
-
       </div>
-
     </section>
 
     <div id="dashboardMessage" class="dashboard-message"></div>
 
-    <!-- FOOTER -->
     <footer class="dashboard-footer">
       <strong>MYZEN MONEY</strong>
       <div>Your digital wallet</div>
       <div>Simple. Secure. Convenient.</div>
       <div>© 2026 MYZEN MONEY. All rights reserved.</div>
 
-      <button
-        type="button"
-        id="logoutBtn"
-        class="footer-logout"
-      >
+      <button type="button" id="logoutBtn" class="footer-logout">
         Logout
       </button>
     </footer>
 
   </main>
 
-  <script type="module" src="js/dashboard.js?v=20261127"></script>
-
+  <script type="module" src="js/dashboard.js?v=20261128"></script>
 </body>
 </html>
