@@ -9,6 +9,8 @@ import {
 const API_BASE_URL = "https://myzen-money-js.onrender.com";
 const ADMIN_EMAIL = "tharwaiphyol@gmail.com";
 
+const PRESENCE_REFRESH_INTERVAL = 30000;
+
 const $ = (id) => document.getElementById(id);
 
 const els = {
@@ -75,6 +77,12 @@ let internationalTransferRecords = [];
 let userRecords = [];
 let currentQrPreviewUrl = null;
 let authReady = false;
+let presenceRefreshTimer = null;
+let usersLoading = false;
+
+/* =====================================
+   HTML SECURITY
+===================================== */
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -85,6 +93,10 @@ function escapeHTML(value) {
     "'": "&#039;"
   })[char]);
 }
+
+/* =====================================
+   MESSAGE HELPERS
+===================================== */
 
 function setMessage(element, message, type = "") {
   if (!element) return;
@@ -117,6 +129,10 @@ function setUserMessage(message, type = "") {
   setMessage(els.userMessage, message, type);
 }
 
+/* =====================================
+   DATE HELPERS
+===================================== */
+
 function formatDate(value) {
   if (!value) return "Date unavailable";
 
@@ -137,10 +153,23 @@ function formatDate(value) {
     : date.toLocaleString();
 }
 
+function formatLastSeen(value, online = false) {
+  if (online) return "Active now";
+  if (!value) return "Not available";
+
+  return formatDate(value);
+}
+
+/* =====================================
+   MONEY HELPERS
+===================================== */
+
 function formatMoney(value, currency = "THB") {
   const amount = Number(value || 0);
 
-  if (!Number.isFinite(amount)) return `0 ${currency}`;
+  if (!Number.isFinite(amount)) {
+    return `0 ${currency}`;
+  }
 
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: currency === "THB" ? 2 : 0,
@@ -155,6 +184,10 @@ function getStatus(value) {
     ? status
     : "unknown";
 }
+
+/* =====================================
+   API REQUEST
+===================================== */
 
 async function apiRequest(endpoint, options = {}) {
   if (!currentUser) {
@@ -209,10 +242,21 @@ function updateStats() {
     method => method.enabled === true
   ).length;
 
-  if (els.statTotal) els.statTotal.textContent = total;
-  if (els.statPending) els.statPending.textContent = pending;
-  if (els.statApproved) els.statApproved.textContent = approved;
-  if (els.statMethods) els.statMethods.textContent = activeMethods;
+  if (els.statTotal) {
+    els.statTotal.textContent = total;
+  }
+
+  if (els.statPending) {
+    els.statPending.textContent = pending;
+  }
+
+  if (els.statApproved) {
+    els.statApproved.textContent = approved;
+  }
+
+  if (els.statMethods) {
+    els.statMethods.textContent = activeMethods;
+  }
 }
 
 function updateUserStats(stats = {}) {
@@ -224,6 +268,10 @@ function updateUserStats(stats = {}) {
     user => String(user.status || "").toLowerCase() === "pending"
   ).length;
 
+  const active = userRecords.filter(
+    user => user.online === true
+  ).length;
+
   if (els.statTotalUsers) {
     els.statTotalUsers.textContent =
       Number(stats.totalUsers ?? userRecords.length);
@@ -231,7 +279,7 @@ function updateUserStats(stats = {}) {
 
   if (els.statActiveUsers) {
     els.statActiveUsers.textContent =
-      Number(stats.activeUsers ?? 0);
+      Number(stats.activeUsers ?? active);
   }
 
   if (els.statApprovedUsers) {
@@ -272,12 +320,26 @@ function renderUsers() {
     els.userList.innerHTML = search
       ? '<div class="empty">No matching users found.</div>'
       : '<div class="empty">No registered users found.</div>';
+
     return;
   }
 
   els.userList.innerHTML = filtered.map(user => {
     const status = getStatus(user.status);
     const online = user.online === true;
+
+    const onlineClass = online
+      ? "user-online"
+      : "user-offline";
+
+    const onlineLabel = online
+      ? "Online"
+      : "Offline";
+
+    const lastSeen = formatLastSeen(
+      user.lastSeenAt,
+      online
+    );
 
     return `
       <article class="user-item">
@@ -286,7 +348,7 @@ function renderUsers() {
           <h3>${escapeHTML(user.name || "Unnamed User")}</h3>
 
           <span class="status ${status}">
-            ${status}
+            ${escapeHTML(status)}
           </span>
         </div>
 
@@ -302,14 +364,23 @@ function renderUsers() {
 
         <p>
           <strong>Account Status:</strong>
-          ${status}
+          <span class="status ${status}">
+            ${escapeHTML(status)}
+          </span>
         </p>
 
         <p>
           <strong>Online Status:</strong>
-          <span class="status ${online ? "user-online" : "user-offline"}">
-            ${online ? "Online" : "Offline"}
+
+          <span class="status ${onlineClass}">
+            <span class="online-indicator"></span>
+            ${onlineLabel}
           </span>
+        </p>
+
+        <p>
+          <strong>Last Seen:</strong>
+          ${escapeHTML(lastSeen)}
         </p>
 
         <p>
@@ -338,11 +409,17 @@ function renderUsers() {
   }).join("");
 }
 
-async function loadUsers() {
-  if (!els.userList) return;
+async function loadUsers(options = {}) {
+  if (!els.userList || usersLoading) return;
 
-  els.userList.textContent = "Loading registered users...";
-  setUserMessage("Loading user records...");
+  const silent = options.silent === true;
+
+  usersLoading = true;
+
+  if (!silent) {
+    els.userList.textContent = "Loading registered users...";
+    setUserMessage("Loading user records...");
+  }
 
   try {
     const data = await apiRequest("/api/admin/users");
@@ -354,26 +431,84 @@ async function loadUsers() {
     updateUserStats(data.stats || {});
     renderUsers();
 
-    setUserMessage(
-      `${userRecords.length} user record(s) loaded.`,
-      "ok"
-    );
+    if (!silent) {
+      setUserMessage(
+        `${userRecords.length} user record(s) loaded.`,
+        "ok"
+      );
+    }
 
   } catch (error) {
-    els.userList.innerHTML = `
-      <div class="message error">
-        ${escapeHTML(error.message)}
-      </div>
-    `;
+    if (!silent) {
+      els.userList.innerHTML = `
+        <div class="message error">
+          ${escapeHTML(error.message)}
+        </div>
+      `;
 
-    setUserMessage(
-      `Unable to load users: ${error.message}`,
-      "error"
-    );
+      setUserMessage(
+        `Unable to load users: ${error.message}`,
+        "error"
+      );
+    }
 
     throw error;
+
+  } finally {
+    usersLoading = false;
   }
 }
+
+/* =====================================
+   AUTOMATIC ONLINE / OFFLINE REFRESH
+===================================== */
+
+function stopPresenceRefresh() {
+  if (presenceRefreshTimer) {
+    clearInterval(presenceRefreshTimer);
+    presenceRefreshTimer = null;
+  }
+}
+
+function startPresenceRefresh() {
+  stopPresenceRefresh();
+
+  if (!currentUser) return;
+
+  presenceRefreshTimer = setInterval(async () => {
+    if (!currentUser || document.hidden) return;
+
+    try {
+      await loadUsers({ silent: true });
+    } catch (error) {
+      console.warn(
+        "Automatic user presence refresh failed:",
+        error.message
+      );
+    }
+  }, PRESENCE_REFRESH_INTERVAL);
+}
+
+document.addEventListener("visibilitychange", async () => {
+  if (
+    document.visibilityState === "visible" &&
+    currentUser &&
+    authReady
+  ) {
+    try {
+      await loadUsers({ silent: true });
+    } catch (error) {
+      console.warn(
+        "Presence refresh failed:",
+        error.message
+      );
+    }
+  }
+});
+
+/* =====================================
+   APPROVE USER
+===================================== */
 
 async function approveUser(uid, button) {
   const user = userRecords.find(item => item.uid === uid);
@@ -443,6 +578,7 @@ async function loadDeposits() {
     if (!depositRecords.length) {
       els.deposits.innerHTML =
         '<div class="empty">No deposit requests found.</div>';
+
     } else {
       els.deposits.innerHTML = depositRecords.map(item => {
         const id = escapeHTML(item.id);
@@ -559,7 +695,13 @@ async function viewProof(id, button) {
       throw new Error("Proof container not found.");
     }
 
-    const safeUrl = escapeHTML(proofUrl);
+    const parsedUrl = new URL(proofUrl);
+
+    if (parsedUrl.protocol !== "https:") {
+      throw new Error("Invalid payment proof URL.");
+    }
+
+    const safeUrl = escapeHTML(parsedUrl.href);
 
     container.innerHTML = `
       <p><strong>Payment Screenshot</strong></p>
@@ -1040,6 +1182,7 @@ async function loadPaymentMethods() {
     if (!configuredMethods.length) {
       els.methods.innerHTML =
         '<div class="empty">No payment methods configured yet.</div>';
+
     } else {
       els.methods.innerHTML = configuredMethods.map(method => `
         <div class="method-item">
@@ -1606,6 +1749,8 @@ if (els.refreshUsers) {
 
 if (els.logout) {
   els.logout.addEventListener("click", async () => {
+    stopPresenceRefresh();
+
     try {
       await signOut(auth);
       window.location.href = "login.html";
@@ -1629,6 +1774,10 @@ if (els.country && els.currency) {
 onAuthStateChanged(auth, async user => {
   if (!user) {
     currentUser = null;
+    authReady = false;
+
+    stopPresenceRefresh();
+
     window.location.href = "login.html";
     return;
   }
@@ -1636,6 +1785,7 @@ onAuthStateChanged(auth, async user => {
   currentUser = user;
 
   if (authReady) return;
+
   authReady = true;
 
   try {
@@ -1689,6 +1839,8 @@ onAuthStateChanged(auth, async user => {
         "error"
       );
     }
+
+    startPresenceRefresh();
 
   } catch (error) {
     console.error("Admin dashboard error:", error);
