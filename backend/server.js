@@ -1202,6 +1202,12 @@ app.get(
       const depositLedgerReferences = new Set();
       const internationalLedgerReferences = new Set();
 
+      // Original international transfer status lookup.
+      const internationalTransferMap = new Map();
+      internationalSnap.forEach((doc) => {
+        internationalTransferMap.set(doc.id, doc.data());
+      });
+
       // ==========================================
       // WALLET LEDGER
       // ==========================================
@@ -1269,9 +1275,17 @@ app.get(
 
         // Refund history displays rejected,
         // but actual wallet ledger remains unchanged.
-        const historyStatus = isInternationalRefund
+        let historyStatus = isInternationalRefund
           ? "rejected"
           : (data.status || "completed");
+
+        if (!isInternationalRefund && (type.includes("international") || doc.id.startsWith("international_"))) {
+          const internationalId = doc.id.replace(/^international_/, "").replace(/_(DEBIT|REFUND)$/, "");
+          const originalTransfer = internationalTransferMap.get(referenceId) || internationalTransferMap.get(data.transferId || "") || internationalTransferMap.get(internationalId);
+          if (originalTransfer) {
+            historyStatus = originalTransfer.status || "pending";
+          }
+        }
 
         transactions.push({
           id: doc.id,
@@ -1371,3 +1385,8 @@ app.get(
     }
   }
 );
+
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("MYZEN MONEY API LISTENING ON PORT " + PORT);
+});
