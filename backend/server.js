@@ -1387,6 +1387,164 @@ app.get(
 );
 
 
+
+/* ==========================================
+   ADMIN USER MANAGEMENT API
+========================================== */
+
+// GET /api/admin/users
+app.get(
+  "/api/admin/users",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const [userSnapshot, authUsers] = await Promise.all([
+        db.collection("users").get(),
+        (async () => {
+          const users = [];
+          let pageToken;
+
+          do {
+            const result = await firebaseAuth.listUsers(
+              1000,
+              pageToken
+            );
+
+            users.push(...result.users);
+            pageToken = result.pageToken;
+          } while (pageToken);
+
+          return users;
+        })()
+      ]);
+
+      const authMap = new Map(
+        authUsers.map(user => [user.uid, user])
+      );
+
+      const toISO = value => {
+        if (!value) return null;
+
+        const date = typeof value.toDate === "function"
+          ? value.toDate()
+          : new Date(value);
+
+        return Number.isNaN(date.getTime())
+          ? null
+          : date.toISOString();
+      };
+
+      const now = Date.now();
+
+      const users = userSnapshot.docs.map(doc => {
+        const profile = doc.data();
+        const authUser = authMap.get(doc.id);
+
+        const lastSeenAt = toISO(profile.lastSeenAt);
+
+        const online = lastSeenAt
+          ? now - new Date(lastSeenAt).getTime() < 5 * 60 * 1000
+          : false;
+
+        return {
+          uid: doc.id,
+          name: profile.name || authUser?.displayName || "",
+          email: profile.email || authUser?.email || "",
+          status: profile.status || "pending",
+          online,
+          createdAt: toISO(profile.createdAt),
+          lastSignInTime: authUser?.metadata?.lastSignInTime || null
+        };
+      });
+
+      users.sort((a, b) =>
+        new Date(b.createdAt || 0) -
+        new Date(a.createdAt || 0)
+      );
+
+      const stats = {
+        totalUsers: users.length,
+        activeUsers: users.filter(user => user.online).length,
+        approvedUsers: users.filter(
+          user => user.status === "approved"
+        ).length,
+        pendingUsers: users.filter(
+          user => user.status === "pending"
+        ).length
+      };
+
+      return res.json({
+        success: true,
+        users,
+        stats
+      });
+
+    } catch (error) {
+      console.error("ADMIN USERS ERROR:", error);
+
+      return sendError(
+        res,
+        500,
+        "Unable to load users."
+      );
+    }
+  }
+);
+
+// POST /api/admin/users/:uid/approve
+app.post(
+  "/api/admin/users/:uid/approve",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const uid = String(req.params.uid || "").trim();
+
+      if (!uid) {
+        return sendError(res, 400, "User ID is required.");
+      }
+
+      const userRef = db.collection("users").doc(uid);
+      const userSnap = await userRef.get();
+
+      if (!userSnap.exists) {
+        return sendError(res, 404, "User not found.");
+      }
+
+      const profile = userSnap.data();
+
+      if (String(profile.status || "").toLowerCase() !== "pending") {
+        return sendError(
+          res,
+          409,
+          "This user is not pending approval."
+        );
+      }
+
+      await userRef.update({
+        status: "approved",
+        updatedAt: FieldValue.serverTimestamp()
+      });
+
+      return res.json({
+        success: true,
+        message: "User approved successfully."
+      });
+
+    } catch (error) {
+      console.error("ADMIN USER APPROVAL ERROR:", error);
+
+      return sendError(
+        res,
+        500,
+        "Unable to approve user."
+      );
+    }
+  }
+);
+
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log("MYZEN MONEY API LISTENING ON PORT " + PORT);
 });
