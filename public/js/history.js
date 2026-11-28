@@ -94,15 +94,15 @@ function getTransactionTitle(tx) {
 
 function getTransactionIcon(tx) {
   const icons = {
-    deposit: "↓",
-    send: "↑",
-    receive: "↓",
-    international_transfer: "⇄",
-    refund: "↩",
-    other: "•"
+    deposit: "\u2193",
+    send: "\u2191",
+    receive: "\u2193",
+    international_transfer: "\u21C4",
+    refund: "\u21A9",
+    other: "\u2022"
   };
 
-  return icons[getTransactionType(tx)] || "•";
+  return icons[getTransactionType(tx)] || "\u2022";
 }
 
 function getAmountClass(tx) {
@@ -206,7 +206,7 @@ function getStatus(tx) {
   }
 
   if (rejectedStatuses.includes(rawStatus)) {
-    return "Reject";
+    return "Rejected";
   }
 
   if (pendingStatuses.includes(rawStatus)) {
@@ -740,11 +740,29 @@ function openReceipt(tx) {
     )
   );
 
+  const isInternationalTransfer =
+    String(tx.type || "").toLowerCase().includes("international") &&
+    !String(tx.type || "").toLowerCase().includes("refund");
+
   addReceiptRow(
     body,
-    "Amount",
-    formatAmount(tx.amount, tx.currency)
+    isInternationalTransfer ? "Send Amount" : "Amount",
+    formatAmount(
+      tx.sendAmount ?? tx.amount,
+      tx.sendCurrency || tx.currency
+    )
   );
+
+  if (isInternationalTransfer && Number(tx.receiveAmount) > 0) {
+    addReceiptRow(
+      body,
+      "Receive Amount",
+      formatAmount(
+        tx.receiveAmount,
+        tx.receiveCurrency || ""
+      )
+    );
+  }
 
   addReceiptRow(
     body,

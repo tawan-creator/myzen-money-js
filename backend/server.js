@@ -164,7 +164,7 @@ function normalizeCountry(value) {
   if (
     country === "thailand" ||
     country === "th" ||
-    country === "ไทย"
+    country === "\u0E44\u0E17\u0E22"
   ) {
     return "Thailand";
   }
@@ -1275,13 +1275,19 @@ app.get(
 
         // Refund history displays rejected,
         // but actual wallet ledger remains unchanged.
+        let originalTransfer = null;
+
         let historyStatus = isInternationalRefund
           ? "rejected"
           : (data.status || "completed");
 
         if (!isInternationalRefund && (type.includes("international") || doc.id.startsWith("international_"))) {
           const internationalId = doc.id.replace(/^international_/, "").replace(/_(DEBIT|REFUND)$/, "");
-          const originalTransfer = internationalTransferMap.get(referenceId) || internationalTransferMap.get(data.transferId || "") || internationalTransferMap.get(internationalId);
+          originalTransfer =
+            internationalTransferMap.get(referenceId) ||
+            internationalTransferMap.get(data.transferId || "") ||
+            internationalTransferMap.get(internationalId) ||
+            null;
           if (originalTransfer) {
             historyStatus = originalTransfer.status || "pending";
           }
@@ -1294,6 +1300,20 @@ app.get(
           direction: data.direction || "",
           amount: Number(data.amount || 0),
           currency: data.currency || "",
+          sendAmount: Number(originalTransfer?.sendAmount ?? data.amount ?? 0),
+          sendCurrency: originalTransfer?.sendCurrency || data.currency || "",
+          receiveAmount: Number(originalTransfer?.receiveAmount || 0),
+          receiveCurrency: originalTransfer?.receiveCurrency || "",
+          exchangeRate: originalTransfer?.exchangeRate ?? null,
+
+          senderName: originalTransfer?.senderName || "",
+          recipientName: originalTransfer?.recipientName || "",
+          recipientBank: originalTransfer?.recipientBank || "",
+          accountNumber: originalTransfer?.accountNumber || "",
+          recipientPhone: originalTransfer?.recipientPhone || "",
+          fromCountry: originalTransfer?.fromCountry || "",
+          toCountry: originalTransfer?.toCountry || "",
+          note: originalTransfer?.note || "",
           balanceBefore: data.balanceBefore ?? null,
           balanceAfter: data.balanceAfter ?? null,
           status: historyStatus,
@@ -1344,6 +1364,20 @@ app.get(
           direction: "debit",
           amount: Number(data.sendAmount || 0),
           currency: data.sendCurrency || "",
+          sendAmount: Number(data.sendAmount || 0),
+          sendCurrency: data.sendCurrency || "",
+          receiveAmount: Number(data.receiveAmount || 0),
+          receiveCurrency: data.receiveCurrency || "",
+          exchangeRate: data.exchangeRate ?? null,
+
+          senderName: data.senderName || "",
+          recipientName: data.recipientName || "",
+          recipientBank: data.recipientBank || "",
+          accountNumber: data.accountNumber || "",
+          recipientPhone: data.recipientPhone || "",
+          fromCountry: data.fromCountry || "",
+          toCountry: data.toCountry || "",
+          note: data.note || "",
           status: data.status || "pending",
           createdAt: historyDateToISO(data.createdAt)
         });
